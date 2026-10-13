@@ -18,7 +18,7 @@ Bigdata.com is the default source for finance in this workflow. Brand it exactly
 | News for one holding | `bigdata_search` smart mode, one ticker and one aspect per call, e.g. "NVIDIA Corp. news this week" | Keep each result's URL and timestamp for `sources`. Cite as "Source name - MMM DD, YYYY". |
 | Filings and earnings calls | `bigdata_search` with context "search transcripts and filings" | Fetch the whole document with `bigdata_fetch_document` only when the excerpt is not enough. |
 | Next week's calendar | `bigdata_events_calendar`: `economic_calendar` with `countries:["US"]`, `impacts:["HIGH","MEDIUM"]`, plus `corporate_calendar` with the held ids | Always pass explicit start and end dates for the week. |
-| Daily closes for the weekly chart | `snapshots` written by the daily price task (see below) | Bigdata.com gives the latest price, not a history. |
+| Value history for charts | `checkins` written by the page on every change and by the daily check-in task (see below) | Bigdata.com gives the latest price, not a history. |
 | USD/THB | Bank of Thailand reference rate or a quote page via web search | Write it to `prices/latest.usdthb` and each snapshot. |
 | Thai gold (`gold:baht`, `gold:gram`) | Gold Traders Association (goldtraders.or.th) via web search: the buy-back price (ราคารับซื้อ) of 96.5% gold bar per บาททองคำ, in THB. Gram = baht price / 15.244. | Bigdata.com has no spot gold. Use the buy-back price so the value is what Ped could sell for. Write to `prices/latest.alt` with `asOf` and `source`. |
 | Spot gold (`gold:oz`) | XAU/USD from a quote page via web search | USD per troy ounce. |
@@ -26,17 +26,15 @@ Bigdata.com is the default source for finance in this workflow. Brand it exactly
 | Macro series (CPI, yields, payrolls) | Financial Datasets `get_macro_data` | Financial Datasets is connected but its account balance was $0.00 on 2026-10-13, so calls fail until Ped adds credits. Fall back to `bigdata_search` or the BLS/Treasury pages. |
 | Price history for a deep dive | Financial Datasets `get_stock_prices` when it has credits, else the ETF tearsheet returns or web search | |
 
-## Daily price task
+## Daily check-in task
 
-Bigdata.com returns only the latest price. To get the daily series the weekly chart needs, a scheduled task runs Tuesday to Saturday at 06:15 Bangkok time (after the US close). Each run:
+Bigdata.com returns only the latest price, and the ledger page only records a check-in when Ped changes something. A scheduled task runs Tuesday to Saturday at 06:15 Bangkok time (after the US close). Each run:
 
-1. Reads `settings/entities.ids` and the held tickers from the ledger.
-2. Calls `bigdata_portfolio_tearsheet` once for all ids plus SPY (`672082`).
-3. Gets USD/THB.
-4. Gets the gold and crypto prices for every `alt` key the ledger's `assets` need (rows above).
-5. Writes `closes/<YYYY-MM-DD>` = `{date, usdthb, prices: {TICKER: price}, alt: {key: {price, currency}}, source}` and refreshes `prices/latest`.
-
-The weekly brief builds `prices.json` for `portfolio_math.py` from the five `closes` docs of the week.
+1. Reads `portfolios`, `holdings` and `settings` from the ledger.
+2. Calls `bigdata_portfolio_tearsheet` once for every `rpId`, and keeps only USD prices.
+3. Gets gold and crypto prices for holdings of those types that have a `qty` (rows above), and USD/THB.
+4. For each priced holding with a `qty`, sets `profit = qty × price − net` and `valuedAt`. Leaves the rest alone.
+5. Writes `settings/app.usdthb` and one `checkins/<portfolioId>_<date>` per portfolio.
 
 ## Saving work back to Bigdata.com
 

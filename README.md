@@ -14,7 +14,7 @@ pstack มีตัวเลือก workflow กลาง (poteto-mode) หล
 
 ## สามชิ้นหลัก
 
-1. **สมุดพอร์ต** (artifact ใน claude.ai) เก็บรายการซื้อขาย เงินลงทุนรายเดือน ราคา และบทวิเคราะห์ มี dashboard และช่องถาม Claude ลิงก์อยู่ใน `invest.config.json`
+1. **สมุดพอร์ต** (artifact ใน claude.ai) สร้างได้หลายพอร์ต ใส่สินทรัพย์อะไรก็ได้ด้วย จำนวน เงินที่ลงไป และกำไร บันทึกการลงทุนรายเดือน ดูมูลค่ารวมเป็นบาท ราคาตลาดและข่าวจาก Bigdata.com และสรุปโดย Claude ลิงก์อยู่ใน `invest.config.json` ซอร์สอยู่ที่ `artifacts/portfolio-ledger.html` เหตุผลการออกแบบอยู่ที่ `docs/ledger-v2-design.md`
 2. **Ped Weekly** รายงานรายสัปดาห์แบบหน้าเว็บข่าว สร้างจาก `content.json` ด้วย `editorial-brief` กราฟและภาพปกวาดจากข้อมูลจริงทั้งหมด ไม่ดึงรูปจากสำนักข่าว (ลิงก์ไปอ่านต้นฉบับได้)
 3. **Skills** ใน `plugins/invest-stack/skills/`
 
