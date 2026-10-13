@@ -5,7 +5,7 @@ End-of-month look at the whole plan rather than the week's news. Output is an `a
 ## Steps
 
 1. **Read the ledger.** **ledger-sync** "Read everything".
-2. **Check the month is complete.** List the month's `contributions` per portfolio next to the trailing 6-month average. Flag holdings whose `valuedAt` is older than the month start; their values are stale. Ask Ped to refresh them or refresh priced ones per **market-data** before computing.
+2. **Check the month is complete.** List the month's `transactions` per portfolio (buys, fees, average USD/THB) next to the trailing 6-month average. Flag holdings whose `valuedAt` is older than the month start; their values are stale. Ask Ped to refresh them or refresh priced ones per **market-data** before computing.
 3. **Compute.** `ledger_metrics.py --start <last day of previous month> --end <last day of this month>`. Report each portfolio's gain with new money taken out, total wealth, money added, progress against each portfolio's goal, and the mix by asset type.
 4. **Benchmark honestly.** Compare against SPY over the same dates with the same cash flows (money-weighted), not a simple start-to-end percentage. Say which method you used.
 5. **Next month's DCA split.** Run **rebalance-plan** step 3 with the average deposit as the amount.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Metrics for the v2 ledger (portfolios, holdings, contributions, checkins).
+"""Metrics for the Folio ledger (portfolios, holdings, transactions, checkins).
 
   python3 ledger_metrics.py --ledger work/<id>/ledger --start 2026-10-03 --end 2026-10-10 --out work/<id>/metrics.json
 
@@ -52,7 +52,7 @@ def main():
     L = Path(a.ledger)
     portfolios = load(L / "portfolios")
     holdings = load(L / "holdings")
-    contributions = load(L / "contributions")
+    transactions = load(L / "transactions")
     checkins = load(L / "checkins")
     settings = {d["id"]: d for d in load(L / "settings")}
     fx = num(settings.get("app", {}).get("usdthb"))
@@ -70,14 +70,14 @@ def main():
         rows = []
         for h in hs:
             v = thb(num(h.get("net")) + num(h.get("profit")), h.get("currency"))
-            n = thb(num(h.get("net")), h.get("currency"))
+            n = num(h.get("netTHB")) or thb(num(h.get("net")), h.get("currency")) if h.get("currency") == "USD" else num(h.get("net"))
             out["by_type_thb"][h.get("type", "other")] = out["by_type_thb"].get(h.get("type", "other"), 0) + v
             rows.append({"symbol": h.get("symbol") or h.get("name"), "type": h.get("type"), "currency": h.get("currency"),
                          "qty": num(h.get("qty")), "net": num(h.get("net")), "profit": num(h.get("profit")),
                          "value_thb": round(v), "profit_pct": round(num(h.get("profit")) / num(h.get("net")) * 100, 2) if num(h.get("net")) else None,
                          "valued_at": h.get("valuedAt"), "rpId": h.get("rpId")})
         v = sum(r["value_thb"] for r in rows)
-        n = sum(thb(num(h.get("net")), h.get("currency")) for h in hs)
+        n = sum((num(h.get("netTHB")) or thb(num(h.get("net")), "USD")) if h.get("currency") == "USD" else num(h.get("net")) for h in hs)
         tot_v += v
         tot_n += n
         series = sorted([c for c in checkins if c.get("portfolioId") == p["id"]], key=lambda c: c["date"])
@@ -88,11 +88,12 @@ def main():
             period = {"from": s0["date"], "to": s1["date"], "gain_thb": round(gain), "return_pct": round(gain / num(s0["value"]) * 100, 2),
                       "added_thb": round(num(s1["net"]) - num(s0["net"]))}
             tot_start_v += num(s0["value"]); tot_start_n += num(s0["net"]); tot_end_v += num(s1["value"]); tot_end_n += num(s1["net"])
-        contrib = [c for c in contributions if c.get("portfolioId") == p["id"] and a.start < (c.get("date") or "") <= a.end]
+        txs = [t for t in transactions if t.get("portfolioId") == p["id"] and a.start < (t.get("date") or "") <= a.end]
         stale = [r["symbol"] for r in rows if (r["valued_at"] or "") < a.start]
         out["portfolios"].append({"id": p["id"], "name": p.get("name"), "goal_thb": p.get("goal"), "value_thb": round(v), "net_thb": round(n),
                                   "profit_thb": round(v - n), "profit_pct": round((v - n) / n * 100, 2) if n else None,
-                                  "period": period, "contributions_in_period": [{"date": c["date"], "amount": c["amount"], "currency": c.get("currency")} for c in contrib],
+                                  "period": period, "transactions_in_period": [{k: t.get(k) for k in ("date", "kind", "holdingId", "qty", "price", "fee", "fxRate", "total", "currency", "thb", "realized")} for t in txs],
+                                  "fees_thb_in_period": round(sum(num(t.get("fee")) * (num(t.get("fxRate")) or fx if t.get("currency") == "USD" else 1) for t in txs)),
                                   "stale_values": stale, "holdings": sorted(rows, key=lambda r: -r["value_thb"])})
     out["total"] = {"value_thb": round(tot_v), "net_thb": round(tot_n), "profit_thb": round(tot_v - tot_n),
                     "profit_pct": round((tot_v - tot_n) / tot_n * 100, 2) if tot_n else None}

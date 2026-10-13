@@ -1,6 +1,6 @@
 ---
 name: ledger-sync
-description: "Read and write Ped's portfolio ledger artifact (portfolios, holdings, monthly contributions, value check-ins, news, analyses) and compute portfolio numbers from it. Use whenever a playbook touches the ledger or needs portfolio numbers."
+description: "Read and write Ped's portfolio ledger artifact (portfolios, holdings, the transactions cost log, value check-ins, news, watchlist, price history, analyses) and compute portfolio numbers from it. Use whenever a playbook touches the ledger or needs portfolio numbers."
 ---
 
 # Ledger sync
@@ -11,16 +11,20 @@ The ledger is a claude.ai artifact page with a shared database. Its URL is `ledg
 
 | Collection / doc | Fields | Who writes |
 |---|---|---|
-| `portfolios/<id>` | `name`, `color` (0 to 7), `goal` (THB, optional), `note`, `order`, `createdAt` | Ped |
-| `holdings/<id>` | `portfolioId`, `type` (`us_stock`, `th_stock`, `fund`, `gold`, `crypto`, `cash`, `bond`, `other`), `symbol`, `name`, `currency` (`THB`/`USD`), `qty`, `net` (money put in), `profit` (current gain, negative for a loss), `valuedAt`, `rpId` (Bigdata.com id, US listings only) | Ped; Claude may update `profit` and `valuedAt` |
-| `contributions/<id>` | `portfolioId`, `holdingId` (optional), `date`, `amount`, `currency`, `qty`, `appliedNet` (amount added to the holding's `net`, in the holding's currency), `fx`, `note` | Ped, or Claude after Ped confirms |
-| `checkins/<portfolioId>_<YYYY-MM-DD>` | `portfolioId`, `date`, `value`, `net` (THB). One per portfolio per day. | The page on every change; Claude after updating values |
+| `portfolios/<id>` | `name`, `color` (0 to 7), `icon` ({`kind`:`glyph`,`key`} or {`kind`:`img`,`data`: a 128px data URL}), `goal` (THB, optional), `note`, `order`, `createdAt` | Ped |
+| `holdings/<id>` | `portfolioId`, `type` (`us_stock`, `th_stock`, `fund`, `gold`, `crypto`, `cash`, `bond`, `other`), `symbol`, `name`, `currency` (`THB`/`USD`), `qty`, `net` (money invested, in the holding's currency, fees included), `netTHB` (USD holdings only: baht actually paid, so FX effect can be shown), `profit` (current gain, negative for a loss), `unit` (gold only: `baht`, `gram`, `oz`), `valuedAt`, `rpId` (Bigdata.com id, US listings only) | Ped; Claude may update `profit` and `valuedAt` |
+| `transactions/<id>` | The cost log. `portfolioId`, `batchId` (one Invest/adjust save), `holdingId`, `kind` (`buy`, `sell`, `dividend`), `date`, `currency`, `price`, `qty`, `fee` (commission, in the holding's currency), `fxRate` (USD/THB the broker gave, USD only), `gross`, `total` (buy: gross + fee; sell: gross − fee), `thb` (baht paid or received), `realized` (sell: gain over average cost after fee; dividend: amount), `cashAddedTHB`, `note`, `applied` {`net`,`qty`,`netTHB`} (what the save added to the holding, so a delete reverses it exactly) | Ped through Invest/adjust, or Claude after Ped confirms |
+| `checkins/<portfolioId>_<YYYY-MM-DD>` | `portfolioId`, `date`, `value`, `net` (THB), `usdthb`. One per portfolio per day. | The page on every change; Claude after updating values |
 | `news/<id>` | `date`, `title`, `url`, `source`, `summary` (under 220 characters, paraphrase when Claude writes it), `symbols`, `fetchedBy` (`bigdata` or `claude-weekly`) | The page's news button; Claude weekly |
 | `analyses/<id>` | `date`, `kind` (`weekly`, `monthly`, `ask`, `deep`), `portfolioId` (optional), `title`, `summary`, `body` (markdown), `link`, `createdAt` | Claude, and the page's summary box |
-| `settings/app` | `usdthb`, `fxAsOf`, `fxSource`, `typeTargets` {type: percent of total wealth, optional} | Ped or Claude (targets only after Ped confirms) |
+| `watchlist/<id>` | `symbol`, `type` (`us_stock` or `crypto`), `createdAt` | Ped |
+| `pricehist/<SYMBOL or GOLD>` | `points` {YYYY-MM-DD: price in USD}, `updatedAt`. One price a day from the live feed, at most about 5 years. | The page while open; Claude's daily task may add points |
+| `settings/app` | `usdthb` (the page writes the live Bigdata.com rate once a day), `fxAsOf`, `fxSource`, `typeTargets` {type: percent of total wealth, optional} | Ped or Claude (targets only after Ped confirms) |
 | `settings/entities` | `ids` {SYMBOL: Bigdata.com rp_entity_id} | The page and Claude |
 
-Value of a holding = `net + profit` in its currency, converted at `settings/app.usdthb`.
+Value of a holding = `net + profit` in its currency, converted at `settings/app.usdthb`. Money invested in THB is `netTHB` for USD holdings, so a holding's THB gain splits into price effect and FX effect.
+
+The page is called Folio and its UI is in English. Live USD/THB, spot gold and crypto prices come from Bigdata.com's `bigdata_market_tearsheet` (a markdown table the page parses). Price history for charts comes from Financial Datasets `get_stock_prices`, which needs credits on that account; without them the page falls back to `pricehist`.
 
 Bigdata.com resolves some symbols to the home listing, not the US one. TSM resolved to TSMC in Taipei with prices in TWD. Only use a live price whose `price.currency` is `USD` (ETFs return no currency, which is fine). The page already skips the others and asks Ped for a manual value.
 
@@ -31,10 +35,11 @@ Collections from the v1 ledger (`trades`, `deposits`, `assets`, `prices`, `snaps
 ```
 ArtifactData list  url=<ledger_url> collection=portfolios    out_dir=work/<id>/ledger
 ArtifactData list  url=<ledger_url> collection=holdings      out_dir=work/<id>/ledger
-ArtifactData list  url=<ledger_url> collection=contributions out_dir=work/<id>/ledger
+ArtifactData list  url=<ledger_url> collection=transactions  out_dir=work/<id>/ledger
 ArtifactData list  url=<ledger_url> collection=checkins      out_dir=work/<id>/ledger
 ArtifactData list  url=<ledger_url> collection=settings      out_dir=work/<id>/ledger
 ArtifactData list  url=<ledger_url> collection=news          out_dir=work/<id>/ledger
+ArtifactData list  url=<ledger_url> collection=watchlist     out_dir=work/<id>/ledger
 ```
 
 Page with `query.cursor` if a result has `next_cursor`. `work/` is git-ignored because it holds Ped's positions.
