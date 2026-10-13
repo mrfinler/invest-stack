@@ -17,6 +17,9 @@
   --bg:#121614; --surface:#1a1f1c; --line:#2d3530; --ink:#e7ece8; --muted:#97a39b;
   --accent:#8fa4f0; --accent-soft:#232c48; --gain:#4cc283; --loss:#f07a6d; --warn:#e3a53a; color-scheme:dark}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
+#opTable input{min-width:88px}
+#opTable td{padding-inline:4px}
 body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--body);margin:0}
 .wrap{max-width:1080px;margin:0 auto;padding-inline:16px;padding-block:20px 64px}
 header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 24px;margin-bottom:14px}
@@ -105,9 +108,9 @@ details summary{cursor:pointer;color:var(--accent);font-size:.85rem}
   <div data-panel="overview">
     <div id="overviewEmpty" class="empty" hidden>
       <strong>สมุดยังว่างอยู่</strong>
-      <span>เริ่มจากบันทึกหุ้นที่ถืออยู่ในแท็บ “บันทึกรายการ” (ใส่เป็นรายการซื้อด้วยราคาเฉลี่ยจาก Dime ก็ได้) หรือวาง CSV ทีเดียวทั้งพอร์ต แล้ว Claude จะอัปเดตราคาให้ทุกสัปดาห์</span>
+      <span>เริ่มจากใส่หุ้นที่ถืออยู่ตอนนี้ แค่ ticker จำนวนหุ้น และต้นทุนเฉลี่ยจากแอป Dime จากนั้นค่อยบันทึกการซื้อขายใหม่และเงินลงทุนแต่ละเดือนต่อไป</span>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn" type="button" data-goto="trades">เพิ่มรายการแรก</button>
+        <button class="btn" type="button" data-goto="trades" data-scroll="opening">ใส่หุ้นที่ถืออยู่</button>
         <button class="btn ghost" type="button" id="demoOn">ดูหน้าตาด้วยข้อมูลตัวอย่าง</button>
       </div>
     </div>
@@ -133,6 +136,26 @@ details summary{cursor:pointer;color:var(--accent);font-size:.85rem}
 
   <!-- TRADES -->
   <div data-panel="trades" hidden>
+    <section class="panel" style="margin-bottom:18px" id="opening">
+      <h2>หุ้นที่ถืออยู่แล้ว</h2>
+      <p class="note" style="margin-top:0">ใส่ตามหน้า Portfolio ในแอป Dime ได้เลย: จำนวนหุ้น และต้นทุนเฉลี่ยต่อหุ้น (USD) ไม่ต้องย้อนหาทุกรายการซื้อ ถ้ารู้เรทเงินบาทเฉลี่ยตอนซื้อให้ใส่ด้วย กำไรในรูปเงินบาทจะได้แม่น การซื้อขายหลังวันที่ด้านล่างค่อยบันทึกในส่วน “เพิ่มรายการ”</p>
+      <div class="entry" style="display:grid;grid-template-columns:minmax(0,220px);margin-bottom:10px">
+        <label>ข้อมูล ณ วันที่<input type="date" id="opDate"></label>
+      </div>
+      <div class="tablebox"><table id="opTable"></table></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center">
+        <button class="btn ghost" type="button" id="opAdd">+ เพิ่มหุ้น</button>
+        <button class="btn" type="button" id="opSave">บันทึกพอร์ตที่ถืออยู่</button>
+        <span class="note" id="opTotal"></span>
+      </div>
+      <div class="status" id="opStatus"></div>
+      <details>
+        <summary>วางทีเดียวหลายตัว</summary>
+        <p class="note">บรรทัดละหนึ่งตัว: <span class="num">ticker จำนวนหุ้น ต้นทุนเฉลี่ย [เรทบาท]</span> คั่นด้วยเว้นวรรคหรือจุลภาค</p>
+        <textarea id="opPaste" placeholder="VOO 1.25 512.30 36.4&#10;NVDA 3.5 141.20"></textarea>
+        <div style="margin-top:8px"><button class="btn ghost" type="button" id="opParse">ใส่ลงตาราง</button></div>
+      </details>
+    </section>
     <section class="panel" style="margin-bottom:18px">
       <h2>เพิ่มรายการ</h2>
       <form class="entry" id="tradeForm" autocomplete="off">
@@ -257,13 +280,13 @@ const num = v => { const n = parseFloat(v); return isFinite(n)?n:0; };
 /* ---------- domain ---------- */
 function computeHoldings(trades, prices){
   const by = {};
-  const sorted = [...trades].sort((a,b)=> (a.date||'').localeCompare(b.date||''));
+  const sorted = [...trades].sort((a,b)=> (a.date||'').localeCompare(b.date||'') || (a.type==='opening'?0:1)-(b.type==='opening'?0:1));
   let realized = 0, divs = 0, divsTHB = 0;
   for (const t of sorted){
     const k = (t.ticker||'').toUpperCase(); if(!k) continue;
     const h = by[k] ||= {ticker:k, shares:0, cost:0, costTHB:0, realized:0, divs:0};
     const fx = num(t.fx) || fxNow(prices);
-    if (t.type==='buy'){
+    if (t.type==='buy' || t.type==='opening'){
       const c = num(t.shares)*num(t.price)+num(t.fee);
       h.shares += num(t.shares); h.cost += c; h.costTHB += c*fx;
     } else if (t.type==='sell' && h.shares>0){
@@ -299,7 +322,7 @@ function fxNow(prices){ return num(prices?.usdthb) || 36; }
 /* ---------- demo data (never saved) ---------- */
 const DEMO = {
   trades:[
-    {id:'d1',date:'2026-05-03',type:'buy',ticker:'VOO',shares:1.2,price:520,fee:0,fx:36.8,note:'ตัวอย่าง'},
+    {id:'opening-VOO',date:'2026-05-03',type:'opening',ticker:'VOO',shares:1.2,price:520,fee:0,fx:36.8,note:'ตัวอย่าง'},
     {id:'d2',date:'2026-06-02',type:'buy',ticker:'MSFT',shares:0.8,price:470,fee:0,fx:36.5,note:'ตัวอย่าง'},
     {id:'d3',date:'2026-07-02',type:'buy',ticker:'NVDA',shares:2,price:150,fee:0,fx:36.1,note:'ตัวอย่าง'},
     {id:'d4',date:'2026-08-04',type:'buy',ticker:'VOO',shares:0.6,price:540,fee:0,fx:36.0,note:'ตัวอย่าง'},
@@ -329,7 +352,7 @@ function render(){
       : '<span class="chip warn">ยังไม่มีราคาล่าสุด</span>';
   renderKpis(H, V, fx); renderValueChart(V.snapshots, H); renderAlloc(H, V.targets);
   renderHoldings(H); renderTrades(V.trades); renderMonthly(V, H); renderAnalyses(V.analyses);
-  renderPrices(H, V); renderTargets(H, V.targets);
+  renderPrices(H, V); renderTargets(H, V.targets); renderOpening();
 }
 function renderKpis(H, V, fx){
   const pl = H.value - H.cost;
@@ -391,7 +414,7 @@ function renderHoldings(H){
     <td class="num">${(h.weight*100).toFixed(1)}%</td></tr>`).join('');
   $('#holdingsTable').innerHTML = `<thead><tr><th>หุ้น</th><th>จำนวน</th><th>ต้นทุนเฉลี่ย</th><th>ราคา</th><th>วันล่าสุด</th><th>เป้านักวิเคราะห์</th><th>มูลค่า</th><th>กำไร/ขาดทุน</th><th>%</th><th>สัดส่วน</th></tr></thead><tbody>${rows||'<tr><td colspan="10" class="note">ยังไม่มีหุ้น</td></tr>'}</tbody>`;
 }
-const TYPE_TH = {buy:'ซื้อ',sell:'ขาย',dividend:'ปันผล'};
+const TYPE_TH = {buy:'ซื้อ',sell:'ขาย',dividend:'ปันผล',opening:'ถืออยู่เดิม'};
 function renderTrades(trades){
   const sorted=[...trades].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   const rows = sorted.map(t=>{
@@ -465,7 +488,8 @@ function show(tab){
   try{ localStorage.setItem('ledger-tab',tab); }catch(e){}
 }
 $$('nav.tabs button').forEach(b=>b.addEventListener('click',()=>show(b.dataset.tab)));
-document.addEventListener('click',e=>{ const g=e.target.closest('[data-goto]'); if(g) show(g.dataset.goto); });
+document.addEventListener('click',e=>{ const g=e.target.closest('[data-goto]'); if(!g) return; show(g.dataset.goto);
+  if(g.dataset.scroll){ const el=document.getElementById(g.dataset.scroll); if(el){ el.scrollIntoView({block:'start'}); el.querySelector('input')?.focus(); } } });
 const hashTab = location.hash.slice(1);
 let startTab='overview'; try{ startTab = localStorage.getItem('ledger-tab')||startTab; }catch(e){}
 if (['overview','trades','monthly','analysis','settings'].includes(hashTab)) startTab=hashTab;
@@ -512,7 +536,7 @@ $('#tradeTable').addEventListener('click', async e=>{
   const act=e.target.dataset.act;
   if(act==='ask'){ box.innerHTML='<button class="btn small danger" type="button" data-act="yes">ยืนยันลบ</button><button class="btn small ghost" type="button" data-act="no">ไม่</button>'; }
   else if(act==='no'){ render(); }
-  else if(act==='yes'){ try{ await db.collection('trades').doc(box.dataset.del).delete(); }catch(err){ $('#tradeStatus').textContent='ลบไม่สำเร็จ'; } }
+  else if(act==='yes'){ try{ await db.collection('trades').doc(box.dataset.del).delete(); if(box.dataset.del.startsWith('opening-')) opDirty=false; }catch(err){ $('#tradeStatus').textContent='ลบไม่สำเร็จ'; } }
 });
 $('#depForm').addEventListener('submit', async e=>{
   e.preventDefault(); const st=$('#depStatus'); if(needDb(st)) return;
@@ -538,6 +562,81 @@ $('#targetSave').addEventListener('click', async ()=>{
   if(needDb($('#targetSum'))) return;
   const w={}; $$('[data-tg]').forEach(i=>{ if(i.value!=='') w[i.dataset.tg]=num(i.value); });
   try{ await db.doc('settings/targets').set({weights:w,updatedAt:new Date().toISOString()}); }catch(err){ $('#targetSum').textContent='บันทึกไม่สำเร็จ'; }
+});
+
+/* ---------- existing holdings (opening positions) ---------- */
+let opRows = null, opDirty = false;
+const blankRow = () => ({ticker:'',shares:'',price:'',fx:''});
+function opFromStore(){
+  const docs = view().trades.filter(t=>t.type==='opening').sort((a,b)=>(a.ticker||'').localeCompare(b.ticker||''));
+  if(!opDirty){ const d=docs[0]?.date; $('#opDate').value = d || today(); }
+  return docs.length ? docs.map(t=>({ticker:t.ticker||'',shares:t.shares??'',price:t.price??'',fx:t.fx??''})) : [blankRow(),blankRow(),blankRow()];
+}
+function renderOpening(force){
+  if(opDirty && !force) return;
+  if(!opDirty) opRows = opFromStore();
+  const dis = S.demo ? 'disabled' : '';
+  $('#opTable').innerHTML = `<thead><tr><th>Ticker</th><th>จำนวนหุ้น</th><th>ต้นทุนเฉลี่ย/หุ้น (USD)</th><th>เรทบาทเฉลี่ย (ไม่บังคับ)</th><th>ต้นทุนรวม</th><th></th></tr></thead><tbody>${
+    opRows.map((r,i)=>`<tr>
+      <td><input id="op-t-${i}" data-op="${i}" data-f="ticker" value="${esc(r.ticker)}" placeholder="VOO" style="max-width:110px;text-transform:uppercase" ${dis}></td>
+      <td><input id="op-s-${i}" data-op="${i}" data-f="shares" type="number" step="any" min="0" value="${esc(r.shares)}" style="max-width:120px;text-align:right" class="num" ${dis}></td>
+      <td><input id="op-p-${i}" data-op="${i}" data-f="price" type="number" step="any" min="0" value="${esc(r.price)}" style="max-width:130px;text-align:right" class="num" ${dis}></td>
+      <td><input id="op-x-${i}" data-op="${i}" data-f="fx" type="number" step="any" min="0" value="${esc(r.fx)}" placeholder="36.00" style="max-width:110px;text-align:right" class="num" ${dis}></td>
+      <td class="num" id="op-c-${i}">${num(r.shares)&&num(r.price)?fUSD(num(r.shares)*num(r.price)):'–'}</td>
+      <td><button class="btn small ghost" type="button" data-oprm="${i}" aria-label="ลบแถว" ${dis}>ลบ</button></td></tr>`).join('')}</tbody>`;
+  opTotal();
+}
+function opTotal(){
+  const tot = (opRows||[]).reduce((s,r)=>s+num(r.shares)*num(r.price),0);
+  const n = (opRows||[]).filter(r=>r.ticker.trim()&&num(r.shares)).length;
+  $('#opTotal').textContent = n ? `${n} ตัว · ต้นทุนรวม ${fUSD(tot)}` : '';
+}
+$('#opTable').addEventListener('input', e=>{
+  const i=e.target.dataset.op; if(i==null) return;
+  opRows[i][e.target.dataset.f] = e.target.dataset.f==='ticker' ? e.target.value.trim().toUpperCase() : e.target.value;
+  opDirty = true;
+  const r=opRows[i]; $('#op-c-'+i).textContent = num(r.shares)&&num(r.price)?fUSD(num(r.shares)*num(r.price)):'–';
+  opTotal();
+});
+$('#opDate').addEventListener('input', ()=>{ opDirty = true; });
+$('#opTable').addEventListener('click', e=>{
+  const i=e.target.dataset.oprm; if(i==null) return;
+  opRows.splice(+i,1); if(!opRows.length) opRows.push(blankRow()); opDirty=true; renderOpening(true);
+});
+$('#opAdd').addEventListener('click', ()=>{ if(!opRows) opRows=opFromStore(); opRows.push(blankRow()); opDirty=true; renderOpening(true); $('#op-t-'+(opRows.length-1))?.focus(); });
+$('#opParse').addEventListener('click', ()=>{
+  const st=$('#opStatus'); const bad=[]; let added=0;
+  if(!opRows) opRows=opFromStore();
+  opRows = opRows.filter(r=>r.ticker||r.shares||r.price);
+  $('#opPaste').value.split('\n').map(l=>l.trim()).filter(Boolean).forEach((l,i)=>{
+    const [t,s,p,x] = l.split(/[\s,]+/);
+    if(!t || !(num(s)>0) || !(num(p)>0)){ bad.push(i+1); return; }
+    const row={ticker:t.toUpperCase(),shares:s,price:p,fx:x||''};
+    const k=opRows.findIndex(r=>r.ticker===row.ticker); if(k>=0) opRows[k]=row; else opRows.push(row); added++;
+  });
+  if(!opRows.length) opRows.push(blankRow());
+  opDirty=true; renderOpening(true);
+  st.textContent = `ใส่ลงตารางแล้ว ${added} ตัว` + (bad.length?` · บรรทัด ${bad.join(', ')} อ่านไม่ออก`:'') + ' กด “บันทึกพอร์ตที่ถืออยู่” เพื่อเก็บ';
+  if(!bad.length) $('#opPaste').value='';
+});
+$('#opSave').addEventListener('click', async ()=>{
+  const st=$('#opStatus'); if(needDb(st)) return;
+  const rows=(opRows||[]).filter(r=>r.ticker||r.shares||r.price);
+  const bad=rows.filter(r=>!r.ticker||!(num(r.shares)>0)||!(num(r.price)>0)).map(r=>r.ticker||'(ไม่มี ticker)');
+  if(bad.length){ st.textContent=`แถวที่ยังไม่ครบ: ${bad.join(', ')} ต้องมี ticker จำนวนหุ้น และต้นทุนเฉลี่ย`; return; }
+  const seen=new Set(), dup=[]; rows.forEach(r=>{ if(seen.has(r.ticker)) dup.push(r.ticker); seen.add(r.ticker); });
+  if(dup.length){ st.textContent=`มี ${[...new Set(dup)].join(', ')} ซ้ำ รวมเป็นแถวเดียวก่อน`; return; }
+  const date=$('#opDate').value||today();
+  const keep=new Set(rows.map(r=>'opening-'+r.ticker));
+  const stale=S.trades.filter(t=>t.type==='opening' && !keep.has(t.id));
+  $('#opSave').disabled=true; st.textContent='กำลังบันทึก…';
+  try{
+    for(const r of rows) await db.doc('trades/opening-'+r.ticker).set({date,type:'opening',ticker:r.ticker,shares:num(r.shares),price:num(r.price),fee:0,fx:num(r.fx)||null,note:'หุ้นที่ถืออยู่ก่อนเริ่มใช้สมุด',updatedAt:new Date().toISOString()});
+    for(const t of stale) await db.doc('trades/'+t.id).delete();
+    opDirty=false; st.textContent=`บันทึกแล้ว ${rows.length} ตัว ณ ${date}` + (stale.length?` · ลบออก ${stale.length} ตัว`:'');
+    renderOpening(true);
+  }catch(err){ st.textContent='บันทึกไม่สำเร็จ: '+(err.message||err.code); }
+  finally{ $('#opSave').disabled=false; }
 });
 
 /* ---------- ask Claude ---------- */

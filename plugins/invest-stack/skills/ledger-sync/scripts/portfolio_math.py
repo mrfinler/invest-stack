@@ -51,7 +51,7 @@ def positions_as_of(trades, date):
         k = (t.get("ticker") or "").upper()
         h = pos.setdefault(k, {"shares": 0.0, "cost": 0.0})
         typ = t.get("type")
-        if typ == "buy":
+        if typ in ("buy", "opening"):
             h["shares"] += num(t.get("shares")); h["cost"] += num(t.get("shares")) * num(t.get("price")) + num(t.get("fee"))
         elif typ == "sell" and h["shares"] > 0:
             q = min(num(t.get("shares")), h["shares"]); avg = h["cost"] / h["shares"]
@@ -70,7 +70,7 @@ def flows_on(trades, date):
     for t in trades:
         if t.get("date") != date:
             continue
-        if t.get("type") == "buy":
+        if t.get("type") in ("buy", "opening"):
             f += num(t.get("shares")) * num(t.get("price")) + num(t.get("fee"))
         elif t.get("type") == "sell":
             f -= num(t.get("shares")) * num(t.get("price")) - num(t.get("fee"))
@@ -141,8 +141,8 @@ def main():
                 pnl[k] = pnl.get(k, 0.0) + h["shares"] * (closes[k][d] - closes[k][dp])
         for t in trades:
             k = (t.get("ticker") or "").upper()
-            if t.get("date") == d and t.get("type") in ("buy", "sell") and d in closes.get(k, {}):
-                q = num(t.get("shares")) * (1 if t["type"] == "buy" else -1)
+            if t.get("date") == d and t.get("type") in ("buy", "sell", "opening") and d in closes.get(k, {}):
+                q = num(t.get("shares")) * (-1 if t["type"] == "sell" else 1)
                 pnl[k] = pnl.get(k, 0.0) + q * (closes[k][d] - num(t.get("price"))) - num(t.get("fee"))
     contrib = [{"ticker": k, "usd": round(v, 2),
                 "pct": round((closes[k][d1] / closes[k][d0] - 1) * 100, 2) if d0 in closes[k] and d1 in closes[k] else None}

@@ -11,6 +11,7 @@ The ledger is a claude.ai artifact page with a shared database. Its URL is `ledg
 
 | Collection / doc | Fields | Who writes |
 |---|---|---|
+| `trades/opening-<TICKER>` | Holdings Ped already owned before the ledger: `type` `opening`, `date` (as-of date), `ticker`, `shares`, `price` (average cost per share from Dime), `fx` (average THB per USD, optional). Counted like a buy dated on the as-of date. One doc per ticker. | Ped, through the page's "หุ้นที่ถืออยู่แล้ว" table |
 | `trades/<auto>` | `date` (YYYY-MM-DD), `type` (`buy`, `sell`, `dividend`), `ticker`, `shares`, `price` (USD per share), `amount` (USD, dividends only, net of withholding), `fee` (USD), `fx` (THB per USD on that trade), `note` (Ped's reason), `createdAt` | Ped, or Claude after Ped confirms |
 | `deposits/<auto>` | `month` (YYYY-MM), `thb`, `fx`, `note`, `createdAt` | Ped, or Claude after Ped confirms |
 | `prices/latest` | `asOf`, `source`, `usdthb`, `quotes` {TICKER: {price, name, sector}} | Claude weekly, Ped can override |
