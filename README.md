@@ -31,7 +31,9 @@ pstack มีตัวเลือก workflow กลาง (poteto-mode) หล
 
 ## ตัวช่วยที่แนะนำ
 
-- Connector ข้อมูลการเงิน: Financial Datasets หรือ Bigdata.com สำหรับราคา งบ และ transcript งบ ถ้าไม่มีจะค้นเว็บทีละตัว
+- [Bigdata.com](https://bigdata.com) เป็นแหล่งข้อมูลหลัก: ราคาล่าสุด เป้าราคานักวิเคราะห์ sentiment ข่าว งบ transcript ปฏิทินเศรษฐกิจ และเก็บรายงานของเรากลับเข้าไปค้นภายหลังได้ สมุดพอร์ตมีปุ่มดึงราคาจาก Bigdata.com โดยตรง
+- Financial Datasets สำหรับข้อมูลมหภาคและราคาย้อนหลัง (ต้องมีเครดิตในบัญชี)
+- ตารางว่าใช้ connector ตัวไหนกับงานอะไรอยู่ใน skill `market-data`
 - Skills ใน claude.ai: `deep-research` สำหรับเจาะลึก, `artifact-design` และ `dataviz` เวลาเพิ่มกราฟแบบใหม่
 
 ## โครงสร้าง

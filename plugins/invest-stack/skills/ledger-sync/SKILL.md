@@ -15,6 +15,8 @@ The ledger is a claude.ai artifact page with a shared database. Its URL is `ledg
 | `deposits/<auto>` | `month` (YYYY-MM), `thb`, `fx`, `note`, `createdAt` | Ped, or Claude after Ped confirms |
 | `prices/latest` | `asOf`, `source`, `usdthb`, `quotes` {TICKER: {price, name, sector}} | Claude weekly, Ped can override |
 | `snapshots/<YYYY-MM-DD>` | `date`, `valueUSD`, `costUSD`, `usdthb`, `source` | Claude weekly |
+| `closes/<YYYY-MM-DD>` | `date`, `usdthb`, `prices` {TICKER: close}, `source` | Daily price task |
+| `settings/entities` | `ids` {TICKER: Bigdata.com rp_entity_id}, `updatedAt` | Claude or the page's Bigdata.com button |
 | `settings/targets` | `weights` {TICKER: percent}, `updatedAt` | Ped only |
 | `analyses/<auto>` | `date`, `kind` (`weekly`, `monthly`, `ask`, `deep`), `title`, `summary`, `body` (markdown), `link`, `createdAt` | Claude, and the page's Ask Claude box |
 
@@ -26,6 +28,13 @@ ArtifactData list  url=<ledger_url> collection=deposits  out_dir=work/<id>/ledge
 ArtifactData list  url=<ledger_url> collection=settings  out_dir=work/<id>/ledger
 ArtifactData list  url=<ledger_url> collection=prices    out_dir=work/<id>/ledger
 ArtifactData list  url=<ledger_url> collection=snapshots out_dir=work/<id>/ledger
+ArtifactData list  url=<ledger_url> collection=closes    out_dir=work/<id>/ledger
+```
+
+Turn the week's closes into the price file:
+
+```bash
+python3 skills/ledger-sync/scripts/closes_to_prices.py work/<id>/ledger/closes 2026-10-02 2026-10-09 > work/<id>/prices.json
 ```
 
 Page with `query.cursor` if a result has `next_cursor`. `work/` is git-ignored because it holds Ped's positions.

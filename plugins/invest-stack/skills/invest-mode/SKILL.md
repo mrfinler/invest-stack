@@ -24,6 +24,7 @@ The source of truth for his holdings is the portfolio ledger artifact. Its URL i
 - The brief and anything published goes through **editorial-brief**.
 - Contested calls (buy more after a big run, sell a loser, change the target mix) go through **bull-bear-arena** before they reach Ped.
 - Claude is not a licensed adviser. Say so once per brief or answer, plainly, in one sentence. Do not repeat it in every paragraph.
+- Outside data goes through **market-data**. Bigdata.com is the default for prices, news, filings and calendars.
 - Images. Never copy, hotlink or re-host news photos, logos or charts from publishers. Draw figures from data with the brief's own chart helpers, or generate an illustration from the week's numbers. Link the original article so Ped can see its photos there.
 
 ## Principles

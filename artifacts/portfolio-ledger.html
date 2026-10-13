@@ -212,7 +212,11 @@ details summary{cursor:pointer;color:var(--accent);font-size:.85rem}
     <div class="grid2">
       <section class="panel">
         <h2>ราคาล่าสุด</h2>
-        <p class="note">ปกติ Claude อัปเดตให้ทุกสัปดาห์ แก้เองได้ถ้าอยากเห็นตัวเลขวันนี้</p>
+        <p class="note">กดดึงราคาล่าสุดจาก <a href="https://bigdata.com" target="_blank" rel="noopener">Bigdata.com</a> ได้ทุกเมื่อ (ใช้ connector ในบัญชีของคุณเอง) ราคาเป้าหมายนักวิเคราะห์และ sentiment ข่าวมาพร้อมกัน เรท USD/THB ยังใส่เองหรือให้ Claude อัปเดตรายสัปดาห์</p>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+          <button class="btn" type="button" id="bdBtn">ดึงราคาจาก Bigdata.com</button>
+          <span class="status" id="bdStatus"></span>
+        </div>
         <div class="tablebox"><table id="priceTable"></table></div>
         <form class="entry" id="fxForm" style="margin-top:10px;grid-template-columns:1fr auto">
           <label>เรท USD/THB<input type="number" id="fxNow" step="any" min="0"></label>
@@ -279,6 +283,7 @@ function computeHoldings(trades, prices){
     const p = q[h.ticker]?.price;
     const value = p!=null ? h.shares*p : null;
     return {...h, avg:h.cost/h.shares, price:p??null, name:q[h.ticker]?.name||'', sector:q[h.ticker]?.sector||'',
+      chg1d:q[h.ticker]?.change1dPct??null, target:q[h.ticker]?.priceTarget??null, sentiment:q[h.ticker]?.sentiment??null,
       value, pl: value!=null? value-h.cost : null, plPct: value!=null && h.cost? (value-h.cost)/h.cost : null};
   });
   const value = list.reduce((s,h)=>s+(h.value ?? h.cost),0);
@@ -379,10 +384,12 @@ function renderHoldings(H){
   const rows = H.list.map(h=>`<tr><td class="t">${esc(h.ticker)}<div class="note">${esc(h.name)}</div></td>
     <td class="num">${h.shares.toFixed(4).replace(/\.?0+$/,'')}</td><td class="num">${fUSD(h.avg)}</td>
     <td class="num">${h.price!=null?fUSD(h.price):'<span class="chip warn">ไม่มีราคา</span>'}</td>
+    <td class="num ${cls(h.chg1d)}">${h.chg1d!=null?fPct(h.chg1d/100):'–'}</td>
+    <td class="num">${h.target!=null?fUSD(h.target,0)+`<div class="note">${h.price?fPct(h.target/h.price-1):''}</div>`:'–'}</td>
     <td class="num">${h.value!=null?fUSD(h.value):'–'}</td>
     <td class="num ${cls(h.pl)}">${h.pl!=null?fUSD(h.pl):'–'}</td><td class="num ${cls(h.plPct)}">${h.plPct!=null?fPct(h.plPct):'–'}</td>
     <td class="num">${(h.weight*100).toFixed(1)}%</td></tr>`).join('');
-  $('#holdingsTable').innerHTML = `<thead><tr><th>หุ้น</th><th>จำนวน</th><th>ต้นทุนเฉลี่ย</th><th>ราคา</th><th>มูลค่า</th><th>กำไร/ขาดทุน</th><th>%</th><th>สัดส่วน</th></tr></thead><tbody>${rows||'<tr><td colspan="8" class="note">ยังไม่มีหุ้น</td></tr>'}</tbody>`;
+  $('#holdingsTable').innerHTML = `<thead><tr><th>หุ้น</th><th>จำนวน</th><th>ต้นทุนเฉลี่ย</th><th>ราคา</th><th>วันล่าสุด</th><th>เป้านักวิเคราะห์</th><th>มูลค่า</th><th>กำไร/ขาดทุน</th><th>%</th><th>สัดส่วน</th></tr></thead><tbody>${rows||'<tr><td colspan="10" class="note">ยังไม่มีหุ้น</td></tr>'}</tbody>`;
 }
 const TYPE_TH = {buy:'ซื้อ',sell:'ขาย',dividend:'ปันผล'};
 function renderTrades(trades){
@@ -537,7 +544,8 @@ $('#targetSave').addEventListener('click', async ()=>{
 function portfolioContext(){
   const V=view(), H=computeHoldings(V.trades,V.prices);
   return JSON.stringify({asOf:V.prices?.asOf, usdthb:fxNow(V.prices),
-    holdings:H.list.map(h=>({ticker:h.ticker,name:h.name,shares:+h.shares.toFixed(4),avgCostUSD:+h.avg.toFixed(2),priceUSD:h.price,valueUSD:h.value&&+h.value.toFixed(2),plPct:h.plPct&&+(h.plPct*100).toFixed(2),weightPct:+(h.weight*100).toFixed(2),targetPct:V.targets[h.ticker]??null})),
+    holdings:H.list.map(h=>({ticker:h.ticker,name:h.name,shares:+h.shares.toFixed(4),avgCostUSD:+h.avg.toFixed(2),priceUSD:h.price,valueUSD:h.value&&+h.value.toFixed(2),plPct:h.plPct&&+(h.plPct*100).toFixed(2),weightPct:+(h.weight*100).toFixed(2),targetPct:V.targets[h.ticker]??null,change1dPct:h.chg1d,analystTargetUSD:h.target,newsSentiment:h.sentiment})),
+    priceSource:V.prices?.source||null,
     totals:{valueUSD:+H.value.toFixed(2),costUSD:+H.cost.toFixed(2),costTHB:+H.costTHB.toFixed(0),realizedUSD:+H.realized.toFixed(2),dividendsUSD:+H.divs.toFixed(2)},
     deposits:V.deposits.map(d=>({month:d.month,thb:d.thb})),
     recentTrades:[...V.trades].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,15).map(t=>({date:t.date,type:t.type,ticker:t.ticker,shares:t.shares,price:t.price,note:t.note}))});
@@ -571,16 +579,71 @@ $('#askSave').addEventListener('click', async ()=>{
   catch(err){ $('#askStatus').textContent='เก็บไม่สำเร็จ'; }
 });
 
+/* ---------- Bigdata.com live prices ---------- */
+const BD = 'Bigdata.com';
+const US_MIC = ['XNAS','XNGS','XNMS','XNCM','XNYS','ARCX','BATS','XASE'];
+const unwrap = p => { let x = p; if (Array.isArray(x)) x = x[0]; return x || {}; };
+function pickUS(results, ticker){
+  return results.find(r => (r.listing_values||[]).some(l => { const [mic,t]=l.split(':'); return t===ticker && US_MIC.includes(mic); })) || null;
+}
+const BD_ERR = {
+  server_not_connected:'ยังไม่ได้เชื่อม Bigdata.com ในบัญชีนี้ เพิ่มได้ที่ claude.ai Settings → Connectors',
+  needs_reauth:'การเชื่อมต่อ Bigdata.com หมดอายุ เชื่อมใหม่ที่ claude.ai Settings → Connectors',
+  selection_required:'มี Bigdata.com มากกว่าหนึ่งตัว เลือกตัวที่จะใช้ในหน้าต่างที่เด้งขึ้นมา',
+  not_granted:'ยังไม่ได้อนุญาตให้หน้านี้ใช้ Bigdata.com',
+  rate_limited:'เรียกถี่เกินไป รอสักครู่แล้วลองใหม่',
+  server_unavailable:'Bigdata.com ไม่ตอบตอนนี้ ลองใหม่อีกครั้ง'
+};
+let mcp = null;
+$('#bdBtn').addEventListener('click', async ()=>{
+  const st=$('#bdStatus'); if(needDb(st)) return;
+  if(!mcp){ st.textContent='หน้านี้เรียก connector ไม่ได้ในมุมมองนี้ ลองเปิดใน claude.ai'; return; }
+  const tickers = computeHoldings(S.trades,S.prices).list.map(h=>h.ticker);
+  if(!tickers.length){ st.textContent='ยังไม่มีหุ้นในพอร์ต'; return; }
+  const btn=$('#bdBtn'); btn.disabled=true;
+  try{
+    const ids={...(S.entities||{})}; const unresolved=[];
+    for(const t of tickers.filter(t=>!ids[t])){
+      st.textContent=`กำลังหา ${t} ใน Bigdata.com…`;
+      const r=await mcp.callTool(BD,'find_securities',{query:t});
+      const hit=pickUS(unwrap(r.payload).results||[], t);
+      if(hit) ids[t]=hit.id; else unresolved.push(t);
+    }
+    if(Object.keys(ids).length!==Object.keys(S.entities||{}).length) await db.doc('settings/entities').set({ids,updatedAt:new Date().toISOString()});
+    const want=tickers.filter(t=>ids[t]);
+    if(!want.length){ st.textContent='หา ticker ใน Bigdata.com ไม่เจอเลย'; return; }
+    st.textContent='กำลังดึงราคา…';
+    const r=await mcp.callTool(BD,'bigdata_portfolio_tearsheet',{rp_entity_ids:want.map(t=>ids[t]),metrics:['PRICE','PRICE_CHANGE_1D','PRICE_TARGET','SENTIMENT']});
+    const rows=unwrap(r.payload).structured||[];
+    const byId=Object.fromEntries(rows.map(x=>[x.rp_entity_id,x]));
+    const quotes={...(S.prices?.quotes||{})}; const missing=[...unresolved];
+    for(const t of want){
+      const x=byId[ids[t]];
+      if(!x||x.price?.value==null){ missing.push(t); continue; }
+      quotes[t]={...(quotes[t]||{}),price:x.price.value,name:x.name||quotes[t]?.name||'',change1dPct:x.change_1d_pct??null,
+        priceTarget:x.price_target?.value??null,sentiment:x.sentiment?.value??null,sentimentDir:x.sentiment?.direction??null,rpId:ids[t]};
+    }
+    const stamp=new Date().toISOString().slice(0,16).replace('T',' ')+' UTC';
+    await db.doc('prices/latest').set({...(S.prices||{}),quotes,asOf:stamp,source:'Bigdata.com'});
+    st.textContent = missing.length? `อัปเดตแล้ว ยกเว้น ${missing.join(', ')} (ใส่ราคาเองในตารางได้)` : `อัปเดตราคาแล้ว ${want.length} ตัว`;
+  }catch(err){
+    st.textContent = BD_ERR[err?.code] || (err?.code==='tool_error'?'Bigdata.com ตอบกลับว่าผิดพลาด: '+err.message:'ดึงราคาไม่สำเร็จ ('+(err?.code||err?.message||'unknown')+')');
+  }finally{ btn.disabled=false; }
+});
+
 /* ---------- data wiring ---------- */
 render();
 (async ()=>{
   try{ sample = await window.claude?.use?.('sample') ?? null; }catch(e){ sample=null; }
   try{ db = await window.claude?.use?.('db') ?? null; }catch(e){ db=null; }
+  try{ mcp = await window.claude?.use?.('mcp') ?? null; }catch(e){ mcp=null; }
+  $('#bdBtn').hidden = !mcp;
   if(!db){ S.ready=true; $('#priceStamp').innerHTML='<span class="chip warn">เปิดใน claude.ai เพื่อใช้ที่เก็บข้อมูล</span>'; render(); return; }
-  let pending=6; const done=()=>{ if(--pending<=0){ S.ready=true; } render(); };
+  let pending=7; const done=()=>{ if(--pending<=0){ S.ready=true; } render(); };
   const coll=(name,key)=>{ let first=true; db.collection(name).onSnapshot(snap=>{ S[key]=snap.docs.map(d=>({id:d.id,...d.data()})); if(first){first=false;done();} else render(); },()=>{ if(first){first=false;done();} }); };
   coll('trades','trades'); coll('deposits','deposits'); coll('analyses','analyses'); coll('snapshots','snapshots');
   let f1=true; db.doc('prices/latest').onSnapshot(s=>{ S.prices=s.exists?s.data():null; if(f1){f1=false;done();} else render(); },()=>{ if(f1){f1=false;done();} });
+  let f3=true; db.doc('settings/entities').onSnapshot(s=>{ S.entities=s.exists?(s.data().ids||{}):{}; if(f3){f3=false;done();} },()=>{ if(f3){f3=false;done();} });
   let f2=true; db.doc('settings/targets').onSnapshot(s=>{ S.targets=s.exists?(s.data().weights||{}):{}; if(f2){f2=false;done();} else render(); },()=>{ if(f2){f2=false;done();} });
 })();
 })();
