@@ -1,0 +1,152 @@
+<title>Ped Weekly ฉบับตัวอย่าง</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+Thai:wght@500;700;800&family=Anuphan:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>/* Layout: single reading column (about 66ch) with figures that break out to 860px; masthead rule on top, sources as footnotes. */
+:root{
+  --paper:#f5f6f3; --ink:#141a19; --muted:#56625f; --rule:#cfd5d1; --card:#fbfcfa;
+  --accent:#0d5c6b; --accent-2:#b5651d; --tint:#e2ecec;
+  --gain:#1b7f4b; --loss:#b4372b;
+  --serif:"Noto Serif Thai","Noto Serif",Georgia,serif;
+  --sans:"Anuphan","IBM Plex Sans Thai",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#101414; --ink:#e6ecea; --muted:#9aa8a4; --rule:#2c3634; --card:#161c1b;
+  --accent:#6cc3d2; --accent-2:#e3a066; --tint:#1b2a2c; --gain:#55c58a; --loss:#f08377; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#101414; --ink:#e6ecea; --muted:#9aa8a4; --rule:#2c3634; --card:#161c1b;
+  --accent:#6cc3d2; --accent-2:#e3a066; --tint:#1b2a2c; --gain:#55c58a; --loss:#f08377; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:17px/1.75 var(--sans);margin:0}
+.page{max-width:860px;margin:0 auto;padding-inline:20px;padding-block:28px 72px}
+a{color:var(--accent);text-underline-offset:3px}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:.86em}
+.pos{color:var(--gain)} .neg{color:var(--loss)}
+.mast{border-top:6px solid var(--ink);border-bottom:1px solid var(--ink);padding-block:10px 8px;margin-bottom:34px}
+.mast-row{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 16px}
+.brand{font:800 2rem/1 var(--serif);letter-spacing:-.01em}
+.ed{font:500 .82rem var(--mono);color:var(--muted)}
+.mast-sub{font-size:.85rem;color:var(--muted);margin-top:4px}
+.eyebrow{display:block;font:600 .74rem var(--sans);letter-spacing:.12em;color:var(--accent-2);margin-bottom:6px}
+h1{font:800 clamp(1.9rem,4.6vw,2.9rem)/1.25 var(--serif);margin:0 0 12px;text-wrap:balance;max-width:24ch}
+h2{font:700 1.45rem/1.35 var(--serif);margin:0;text-wrap:balance}
+h3{font:700 1.4rem/1.4 var(--serif);margin:4px 0 6px;text-wrap:balance}
+h4{font:600 .9rem var(--sans);margin:0 0 6px;letter-spacing:.02em}
+.standfirst{font-size:1.15rem;line-height:1.65;color:var(--muted);max-width:60ch;margin:0 0 10px}
+.byline{font-size:.8rem;color:var(--muted);border-top:1px solid var(--rule);padding-top:8px;margin:0}
+.lead{display:grid;gap:18px;margin-bottom:46px}
+.lead-body p,.body p{max-width:66ch;margin:0 0 1em}
+.lead-body p:first-child{font-size:1.06rem}
+.cover{margin:0}
+.cover .art{width:100%;height:auto;background:var(--tint);border-radius:3px;display:block}
+figcaption{font-size:.78rem;color:var(--muted);margin-top:6px;line-height:1.5}
+.figsrc{display:block}
+section{margin-bottom:50px}
+.sec-head{border-top:1px solid var(--ink);padding-top:10px;margin-bottom:18px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:18px 24px;margin-bottom:22px}
+.stat{display:grid;gap:2px;min-width:0}
+.stat .k{font-size:.76rem;color:var(--muted);letter-spacing:.03em}
+.stat .v{font:600 1.5rem/1.2 var(--mono);font-variant-numeric:tabular-nums}
+.stat .n{font-size:.78rem;color:var(--muted)}
+.fig{margin:22px 0}
+.figbox{overflow-x:auto}
+.figbox svg{width:100%;min-width:480px;height:auto;display:block}
+svg text{font:11px var(--mono);fill:var(--muted)}
+svg .tick-strong{font-weight:600;fill:var(--ink)}
+svg .grid{stroke:var(--rule);stroke-width:1}
+svg .axis{stroke:var(--ink);stroke-width:1}
+svg .area{fill:var(--tint);stroke:none}
+svg .s-main{fill:none;stroke:var(--accent);stroke-width:2.6}
+svg .s-alt{fill:none;stroke:var(--accent-2);stroke-width:1.8;stroke-dasharray:5 4}
+svg .dot.s-main{fill:var(--accent);stroke:none}
+svg .dot.s-alt{fill:var(--accent-2);stroke:none}
+svg .endlab.s-main{fill:var(--accent);font-weight:600;stroke:none}
+svg .endlab.s-alt{fill:var(--accent-2);stroke:none}
+svg .barpos{fill:var(--gain)} svg .barneg{fill:var(--loss)}
+svg .seg0{fill:var(--accent)} svg .seg1{fill:var(--accent-2)} svg .seg2{fill:var(--muted)}
+svg .seg3{fill:var(--gain)} svg .seg4{fill:var(--ink)} svg .seg5{fill:var(--loss)}
+svg .seglab{fill:var(--paper);font-weight:600}
+svg .artpos{fill:var(--accent)} svg .artneg{fill:var(--accent-2)}
+.tablebox{overflow-x:auto;margin-block:10px}
+table.holdings{border-collapse:collapse;width:100%;font-size:.88rem}
+.holdings th{font-weight:600;font-size:.74rem;color:var(--muted);text-align:right;border-bottom:1px solid var(--ink);padding:6px 8px;white-space:nowrap}
+.holdings td{border-bottom:1px solid var(--rule);padding:8px;text-align:right;vertical-align:top;white-space:nowrap}
+.holdings th:first-child,.holdings td:first-child,.holdings th:last-child,.holdings td:last-child{text-align:left}
+.holdings td.why{white-space:normal;min-width:220px;color:var(--muted);font-size:.85rem;line-height:1.55}
+.hn{display:block;font-size:.74rem;color:var(--muted);font-weight:400}
+.story{padding-block:6px 30px;border-bottom:1px solid var(--rule);margin-bottom:28px}
+.story:last-child{border-bottom:0}
+.kicker{font:600 .76rem var(--sans);color:var(--accent-2);letter-spacing:.06em;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.tag{font:600 .72rem var(--mono);color:var(--accent);border:1px solid var(--accent);border-radius:3px;padding:0 6px;letter-spacing:0}
+.dek{color:var(--muted);font-size:1.02rem;margin:0 0 14px;max-width:62ch}
+sup.fn a{text-decoration:none;font:600 .7em var(--mono);padding-left:1px}
+.impact{background:var(--card);border-left:3px solid var(--accent);padding:14px 18px;margin-top:8px;max-width:66ch}
+.impact p{margin:0 0 .6em;font-size:.95rem}
+.exposure{font-size:.84rem!important;color:var(--muted)}
+.sides{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:22px}
+.side{min-width:0;padding-top:10px;border-top:3px solid var(--gain)}
+.side.bear{border-top-color:var(--loss)}
+.side p{font-size:.95rem;margin:0 0 .7em}
+.verdict{max-width:66ch;margin-top:16px;background:var(--tint);padding:12px 16px;border-radius:3px}
+.action-list{list-style:none;padding:0;margin:0;display:grid;gap:18px;counter-reset:a}
+.action{display:grid;grid-template-columns:118px minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:560px){.action{grid-template-columns:minmax(0,1fr);gap:4px}}
+.action p{margin:.2em 0;font-size:.95rem;max-width:62ch}
+.action .trigger{color:var(--muted);font-size:.86rem}
+.conf{font:600 .74rem var(--sans);padding:3px 8px;border-radius:3px;justify-self:start;border:1px solid var(--muted);color:var(--muted)}
+.conf.c-high{border-color:var(--gain);color:var(--gain)}
+.conf.c-low{border-color:var(--accent-2);color:var(--accent-2)}
+.disclaimer{font-size:.8rem;color:var(--muted);margin-top:18px;max-width:66ch}
+.watch-list{list-style:none;padding:0;margin:0;display:grid;gap:0}
+.watch-list li{display:grid;grid-template-columns:140px minmax(0,1fr);gap:14px;padding:9px 0;border-bottom:1px solid var(--rule);font-size:.95rem}
+@media (max-width:560px){.watch-list li{grid-template-columns:minmax(0,1fr);gap:0}}
+.when{font:600 .82rem var(--mono);color:var(--accent)}
+.sources{border-top:6px solid var(--ink);padding-top:12px}
+.sources h2{font-size:1.1rem;margin-bottom:10px}
+.sources ol{list-style:none;padding:0;margin:0;display:grid;gap:6px;font-size:.84rem}
+.sources li{display:grid;grid-template-columns:28px minmax(0,1fr);column-gap:6px}
+.sources .sn{font:600 .78rem var(--mono);color:var(--muted)}
+.sources .sp{grid-column:2;color:var(--muted);font-size:.78rem}
+.sources a{overflow-wrap:anywhere}
+.colophon{font-size:.78rem;color:var(--muted);margin-top:18px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<div class="page">
+<header class="mast">
+  <div class="mast-row"><span class="brand">Ped Weekly</span><span class="ed">ฉบับตัวอย่าง · 5 ต.ค. 2026 – 9 ต.ค. 2026</span></div>
+  <div class="mast-sub">จดหมายข่าวพอร์ตหุ้นสหรัฐฯ ที่เขียนให้คนถือพอร์ตนี้อ่านคนเดียว</div>
+</header>
+
+<section class="lead">
+  <div class="lead-text">
+    <span class="eyebrow">เรื่องหลักของสัปดาห์ (ตัวอย่าง)</span>
+    <h1>ชิปดึงพอร์ตขึ้น แต่เงินบาทแข็งกินกำไรไปครึ่งหนึ่ง</h1>
+    <p class="standfirst">ในรูปดอลลาร์พอร์ตบวก 1.0% ดีกว่า S&amp;P 500 เล็กน้อย พอแปลงกลับเป็นบาท เหลือบวกแค่ 0.5%</p>
+    <p class="byline">เขียนโดย Claude สำหรับ Ped · อ่านราว 6 นาที · ข้อมูลราคา ณ ราคาปิด 9 ต.ค. (ตัวอย่าง)</p>
+  </div>
+  <figure class="cover"><svg viewBox="0 0 680 210" class="art" role="img" aria-label="ภาพประกอบสร้างจากผลตอบแทนรายวันของพอร์ตสัปดาห์นี้"><rect x="16.3" y="90.7" width="8.2" height="28.5" class="artpos" opacity="0.50"/><rect x="34.0" y="87.1" width="8.2" height="35.9" class="artpos" opacity="0.75"/><rect x="51.7" y="83.4" width="8.2" height="43.2" class="artpos" opacity="1.00"/><rect x="69.4" y="87.1" width="8.2" height="35.9" class="artpos" opacity="0.75"/><rect x="87.0" y="90.7" width="8.2" height="28.5" class="artpos" opacity="0.50"/><rect x="152.3" y="83.8" width="8.2" height="42.4" class="artneg" opacity="0.50"/><rect x="170.0" y="78.4" width="8.2" height="53.3" class="artneg" opacity="0.75"/><rect x="187.7" y="72.9" width="8.2" height="64.2" class="artneg" opacity="1.00"/><rect x="205.4" y="78.4" width="8.2" height="53.3" class="artneg" opacity="0.75"/><rect x="223.0" y="83.8" width="8.2" height="42.4" class="artneg" opacity="0.50"/><rect x="288.3" y="94.9" width="8.2" height="20.2" class="artpos" opacity="0.50"/><rect x="306.0" y="92.3" width="8.2" height="25.4" class="artpos" opacity="0.75"/><rect x="323.7" y="89.7" width="8.2" height="30.6" class="artpos" opacity="1.00"/><rect x="341.4" y="92.3" width="8.2" height="25.4" class="artpos" opacity="0.75"/><rect x="359.0" y="94.9" width="8.2" height="20.2" class="artpos" opacity="0.50"/><rect x="424.3" y="79.7" width="8.2" height="50.7" class="artpos" opacity="0.50"/><rect x="442.0" y="73.1" width="8.2" height="63.7" class="artpos" opacity="0.75"/><rect x="459.7" y="66.6" width="8.2" height="76.8" class="artpos" opacity="1.00"/><rect x="477.4" y="73.1" width="8.2" height="63.7" class="artpos" opacity="0.75"/><rect x="495.0" y="79.7" width="8.2" height="50.7" class="artpos" opacity="0.50"/><rect x="560.3" y="96.3" width="8.2" height="17.4" class="artneg" opacity="0.50"/><rect x="578.0" y="94.0" width="8.2" height="21.9" class="artneg" opacity="0.75"/><rect x="595.7" y="91.8" width="8.2" height="26.4" class="artneg" opacity="1.00"/><rect x="613.4" y="94.0" width="8.2" height="21.9" class="artneg" opacity="0.75"/><rect x="631.0" y="96.3" width="8.2" height="17.4" class="artneg" opacity="0.50"/><line x1="0" x2="680" y1="105.0" y2="105.0" class="axis"/></svg><figcaption>ภาพประกอบ: แต่ละแท่งคือผลตอบแทนรายวันของพอร์ตในสัปดาห์นี้ (สร้างจากข้อมูล)</figcaption></figure>
+  <div class="lead-body"><p>ย่อหน้านี้เป็นตัวอย่างการเปิดเรื่อง เขียนเหมือนเพื่อนที่ตามตลาดมาทั้งอาทิตย์เล่าให้ฟัง บอกว่าอะไรเกิดขึ้น ตัวเลขเท่าไร แล้วมันเกี่ยวกับเงินเราตรงไหน<sup class="fn"><a href="#src-1">1</a></sup></p><p>ย่อหน้าที่สองอธิบายสาเหตุหลักหนึ่งเรื่อง ไม่ไล่ทุกข่าว เพราะรายละเอียดอยู่ในส่วนข่าวด้านล่างแล้ว</p></div>
+</section>
+
+<section class="numbers">
+  <div class="sec-head"><span class="eyebrow">พอร์ตสัปดาห์นี้</span><h2>มูลค่า $1,812 บวก 1.0% ในรูปดอลลาร์</h2></div>
+  <div class="stats"><div class="stat"><span class="k">มูลค่าพอร์ต</span><span class="v ">$1,812</span><span class="n">≈ ฿65,600</span></div><div class="stat"><span class="k">สัปดาห์นี้</span><span class="v pos">+1.0%</span><span class="n">S&amp;P 500 +0.7%</span></div><div class="stat"><span class="k">ตั้งแต่เริ่มลงทุน</span><span class="v pos">+6.6%</span><span class="n">ในรูปบาท +4.1%</span></div><div class="stat"><span class="k">เงินเข้าเดือนนี้</span><span class="v ">฿12,000</span><span class="n">ตามแผน DCA</span></div></div>
+  <figure class="fig"><div class="figbox"><svg viewBox="0 0 680 260" role="img" aria-label="พอร์ตเทียบ S&amp;P 500 ปรับฐานเป็น 100"><line x1="46" x2="610" y1="230.0" y2="230.0" class="grid"/><text x="38" y="234.0" text-anchor="end">99.2</text><line x1="46" x2="610" y1="176.5" y2="176.5" class="grid"/><text x="38" y="180.5" text-anchor="end">100.1</text><line x1="46" x2="610" y1="123.0" y2="123.0" class="grid"/><text x="38" y="127.0" text-anchor="end">101.0</text><line x1="46" x2="610" y1="69.5" y2="69.5" class="grid"/><text x="38" y="73.5" text-anchor="end">101.9</text><line x1="46" x2="610" y1="16.0" y2="16.0" class="grid"/><text x="38" y="20.0" text-anchor="end">102.8</text><text x="46.0" y="252" text-anchor="middle">29 ก.ย.</text><text x="187.0" y="252" text-anchor="middle">1 ต.ค.</text><text x="328.0" y="252" text-anchor="middle">3</text><text x="469.0" y="252" text-anchor="middle">7</text><text x="610.0" y="252" text-anchor="middle">9</text><path d="M46.0,181.8L116.5,158.3L187.0,205.3L257.5,128.9L328.0,111.2L398.5,76.0L469.0,140.6L539.5,123.0L610.0,40.7L610.0,230L46.0,230Z" class="area"/><path d="M46.0,181.8L116.5,158.3L187.0,205.3L257.5,128.9L328.0,111.2L398.5,76.0L469.0,140.6L539.5,123.0L610.0,40.7" class="s-main"/><circle cx="610.0" cy="40.7" r="4" class="dot s-main"/><text x="618.0" y="44.7" class="endlab s-main">พอร์ต</text><path d="M46.0,181.8L116.5,170.0L187.0,187.7L257.5,152.4L328.0,134.8L398.5,117.1L469.0,146.5L539.5,128.9L610.0,93.6" class="s-alt s-alt1"/><circle cx="610.0" cy="93.6" r="4" class="dot s-alt s-alt1"/><text x="618.0" y="97.6" class="endlab s-alt s-alt1">S&amp;P 500</text></svg></div><figcaption>พอร์ตเทียบ S&amp;P 500 สองสัปดาห์ล่าสุด ปรับฐานให้เริ่มที่ 100 <span class="figsrc">ที่มา: ราคาปิดรายวัน (ตัวอย่าง)</span></figcaption></figure>
+  <div class="tablebox"><table class="holdings"><thead><tr><th>หุ้น</th><th>ราคา</th><th>สัปดาห์นี้</th><th>ตั้งแต่ซื้อ</th><th>สัดส่วน</th><th>ทำไมขยับ</th></tr></thead><tbody><tr><td><b>VOO</b><span class="hn">Vanguard S&amp;P 500 ETF</span></td><td class="num">$575.00</td><td class="num pos">+0.70%</td><td class="num pos">+8.10%</td><td class="num">57.1%</td><td class="why">ตามตลาดทั้งกระดาน ไม่มีข่าวเฉพาะตัว</td></tr><tr><td><b>MSFT</b><span class="hn">Microsoft</span></td><td class="num">$505.00</td><td class="num neg">-0.40%</td><td class="num pos">+7.40%</td><td class="num">22.3%</td><td class="why">นักวิเคราะห์ห่วงงบลงทุน AI ก่อนประกาศงบ<sup class="fn"><a href="#src-2">2</a></sup></td></tr><tr><td><b>NVDA</b><span class="hn">NVIDIA</span></td><td class="num">$182.00</td><td class="num pos">+3.90%</td><td class="num pos">+21.30%</td><td class="num">20.6%</td><td class="why">ยอดสั่งชิปจากผู้ให้บริการคลาวด์ออกมาดีกว่าคาด</td></tr></tbody></table></div>
+  <figure class="fig"><div class="figbox"><svg viewBox="0 0 680 120" role="img" aria-label="สัดส่วนพอร์ตเทียบเป้าหมาย"><rect x="10.0" y="20" width="374.9" height="34" class="seg seg0"/><text x="16.0" y="42" class="seglab">VOO 57%</text><rect x="386.9" y="20" width="145.2" height="34" class="seg seg1"/><text x="392.9" y="42" class="seglab">MSFT 22%</text><rect x="534.0" y="20" width="134.0" height="34" class="seg seg2"/><text x="540.0" y="42" class="seglab">NVDA 21%</text><line x1="373.0" x2="373.0" y1="60" y2="74" class="axis"/><line x1="538.0" x2="538.0" y1="60" y2="74" class="axis"/><line x1="670.0" x2="670.0" y1="60" y2="74" class="axis"/><text x="10" y="94">แถบ = สัดส่วนจริง · ขีดด้านล่าง = รอยต่อตามเป้าหมาย</text></svg></div><figcaption>MSFT ต่ำกว่าเป้า 2.7 จุด ส่วนตัวอื่นใกล้เป้า </figcaption></figure>
+</section>
+
+<section class="stories"><div class="sec-head"><span class="eyebrow">ข่าวที่เกี่ยวกับของที่เราถือ</span><h2>สามเรื่องที่ขยับเงินเรา</h2></div><article class="story" id="story-1"><div class="kicker">ชิป <span class="tag">NVDA</span></div><h3>หัวข้อข่าวตัวอย่าง เขียนเป็นประโยคที่บอกข้อเท็จจริง</h3><p class="dek">บรรทัดรองขยายว่าทำไมเรื่องนี้สำคัญกับคนถือหุ้น</p><div class="body"><p>เนื้อข่าวสรุปด้วยคำของ Claude เอง ไม่คัดลอกประโยคจากสำนักข่าว อ้างที่มาด้วยเลขเชิงอรรถ<sup class="fn"><a href="#src-1">1</a></sup></p><p>ย่อหน้าที่สองแยกให้ชัดว่าอะไรคือข้อเท็จจริง อะไรคือการตีความ</p></div><figure class="fig"><div class="figbox"><svg viewBox="0 0 680 110" role="img" aria-label="กำไรขาดทุนรายตัวในสัปดาห์"><line x1="350.0" x2="350.0" y1="4" y2="104" class="axis"/><text x="100" y="25" text-anchor="end" class="tick-strong">NVDA</text><rect x="350.0" y="13" width="240.0" height="18" rx="2" class="barpos"/><text x="598.0" y="25" text-anchor="start">+$13.9</text><text x="100" y="55" text-anchor="end" class="tick-strong">VOO</text><rect x="350.0" y="43" width="124.3" height="18" rx="2" class="barpos"/><text x="482.3" y="55" text-anchor="start">+$7.2</text><text x="100" y="85" text-anchor="end" class="tick-strong">MSFT</text><rect x="322.4" y="73" width="27.6" height="18" rx="2" class="barneg"/><text x="314.4" y="85" text-anchor="end">-$1.6</text></svg></div><figcaption>หุ้นแต่ละตัวทำเงินให้พอร์ตเท่าไรในสัปดาห์นี้ (ดอลลาร์) </figcaption></figure><aside class="impact"><h4>กระทบพอร์ตเรายังไง</h4><p>NVDA เป็น 20% ของพอร์ต ข่าวนี้อธิบายกำไรสัปดาห์นี้ได้ราวครึ่งหนึ่ง</p><p class="exposure">ส่วนของพอร์ตที่โดน: <b>20.6% (NVDA)</b></p></aside></article></section>
+
+<section class="debate"><div class="sec-head"><span class="eyebrow">สองฝั่งของเรื่องเดียวกัน</span><h2>ควรเติม NVDA ต่อหลังขึ้นมาแรงไหม</h2></div><div class="sides"><div class="side bull"><h4>ฝั่งที่มองบวก</h4><p>เหตุผลฝั่งบวก เขียนด้วยตัวเลขและที่มา<sup class="fn"><a href="#src-1">1</a></sup></p></div><div class="side bear"><h4>ฝั่งที่มองลบ</h4><p>เหตุผลฝั่งลบ เขียนอย่างจริงจังเท่ากัน ไม่ใช่หุ่นฟาง</p></div></div><p class="verdict"><b>Claude ชั่งแล้ว:</b> ข้อสรุปของ Claude พร้อมบอกว่าข้อมูลอะไรจะทำให้เปลี่ยนใจ</p></section>
+
+<section class="actions"><div class="sec-head"><span class="eyebrow">ถ้าเป็นผม</span><h2>สิ่งที่น่าทำในเดือนนี้</h2></div>
+<ol class="action-list"><li class="action"><span class="conf c-mid">มั่นใจปานกลาง</span><div><b>เงิน DCA เดือนหน้าเติม MSFT ก่อน</b><p>เป็นตัวเดียวที่ต่ำกว่าเป้า การเติมตัวที่ขาดช่วยปรับสัดส่วนโดยไม่ต้องขาย</p><p class="trigger">เปลี่ยนใจถ้า: งบไตรมาสออกมาแล้วรายจ่ายลงทุนโตเร็วกว่ารายได้คลาวด์ชัดเจน</p></div></li><li class="action"><span class="conf c-high">มั่นใจสูง</span><div><b>ยังไม่ต้องขาย NVDA</b><p>เกินเป้าแค่ 0.6 จุด ต้นทุนการขายและภาษีไม่คุ้ม</p></div></li></ol>
+<p class="disclaimer">ทั้งหมดนี้เป็นความเห็นประกอบการตัดสินใจจาก Claude ซึ่งไม่ใช่ที่ปรึกษาการลงทุนที่มีใบอนุญาต ตัวเลขในอดีตไม่ได้บอกผลในอนาคต</p>
+</section>
+
+<section class="watch"><div class="sec-head"><span class="eyebrow">ปฏิทิน</span><h2>จับตาสัปดาห์หน้า</h2></div><ul class="watch-list"><li><span class="when">อ. 14 ต.ค.</span><span>ตัวเลขเงินเฟ้อสหรัฐฯ (ตัวอย่าง)</span></li><li><span class="when">พฤ. 16 ต.ค.</span><span>งบไตรมาสของบริษัทในพอร์ต (ตัวอย่าง)</span></li></ul></section>
+
+<footer class="sources"><h2>แหล่งข้อมูล</h2><ol><li id="src-1"><span class="sn">1</span><a href="https://example.com/article-1" target="_blank" rel="noopener">ชื่อบทความต้นทาง (ตัวอย่าง)</a><span class="sp">ชื่อสำนักข่าว · 2026-10-08</span></li><li id="src-2"><span class="sn">2</span><a href="https://example.com/article-2" target="_blank" rel="noopener">ชื่อบทความต้นทาง (ตัวอย่าง)</a><span class="sp">ชื่อสำนักข่าว · 2026-10-09</span></li></ol>
+<p class="colophon">ภาพและกราฟทั้งหมดในฉบับนี้สร้างจากข้อมูลพอร์ตและราคาตลาด ไม่ได้คัดลอกรูปจากสำนักข่าว อ่านภาพข่าวต้นฉบับได้จากลิงก์ด้านบน</p></footer>
+</div>

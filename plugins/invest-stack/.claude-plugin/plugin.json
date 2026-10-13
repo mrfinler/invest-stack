@@ -1,0 +1,11 @@
+{
+  "name": "invest-stack",
+  "displayName": "invest-stack",
+  "version": "0.1.0",
+  "description": "Ped's investing workflow for a US-stock portfolio held through Dime: weekly news briefs, monthly reviews, trade logging, deep dives and DCA plans, built on the ideas of Lauren Tan's pstack.",
+  "author": { "name": "Natmatee Pituwaragirakul (Ped)" },
+  "homepage": "https://github.com/mrfinler/invest-stack",
+  "repository": "https://github.com/mrfinler/invest-stack",
+  "license": "MIT",
+  "keywords": ["investing", "portfolio", "weekly-brief", "pstack", "dime", "thai"]
+}

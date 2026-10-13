@@ -1,0 +1,12 @@
+{
+  "ledger_url": "https://claude.ai/artifact/F7Mbm3G8NDXmxqTu3QoyCj",
+  "reader": "Ped",
+  "language": "th",
+  "broker": "Dime",
+  "market": "US",
+  "base_currency": "USD",
+  "home_currency": "THB",
+  "benchmark": "SPY",
+  "timezone": "Asia/Bangkok",
+  "brief_masthead": "Ped Weekly"
+}

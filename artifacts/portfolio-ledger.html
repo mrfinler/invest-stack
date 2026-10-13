@@ -1,0 +1,587 @@
+<title>สมุดพอร์ต Ped</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: ledger app. Sticky tab bar, summary strip first, detail below; one column on phones. */
+:root{
+  --bg:#f3f4f0; --surface:#fbfcf9; --line:#d9ddd3; --ink:#18201c; --muted:#5f6a63;
+  --accent:#2c46a3; --accent-soft:#e3e8f7; --gain:#17824a; --loss:#b8352a; --warn:#a86a00;
+  --display:"Bai Jamjuree","IBM Plex Sans Thai",system-ui,sans-serif;
+  --body:"IBM Plex Sans Thai",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121614; --surface:#1a1f1c; --line:#2d3530; --ink:#e7ece8; --muted:#97a39b;
+  --accent:#8fa4f0; --accent-soft:#232c48; --gain:#4cc283; --loss:#f07a6d; --warn:#e3a53a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121614; --surface:#1a1f1c; --line:#2d3530; --ink:#e7ece8; --muted:#97a39b;
+  --accent:#8fa4f0; --accent-soft:#232c48; --gain:#4cc283; --loss:#f07a6d; --warn:#e3a53a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--body);margin:0}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:16px;padding-block:20px 64px}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 24px;margin-bottom:14px}
+h1{font:700 1.7rem/1.15 var(--display);margin:0;letter-spacing:-.01em}
+.sub{color:var(--muted);font-size:.86rem}
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);margin-bottom:20px}
+nav.tabs button{font:600 .92rem var(--display);background:none;border:0;color:var(--muted);padding:10px 12px;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.pos{color:var(--gain)} .neg{color:var(--loss)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:22px}
+.kpi{background:var(--surface);padding:14px 16px;display:grid;gap:2px;min-width:0}
+.kpi .lab{font-size:.75rem;color:var(--muted);letter-spacing:.04em}
+.kpi .val{font:500 1.35rem/1.2 var(--mono);font-variant-numeric:tabular-nums}
+.kpi .alt{font-size:.8rem;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:22px;margin-bottom:22px}
+@media (max-width:760px){.grid2{grid-template-columns:minmax(0,1fr)}}
+section.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+h2{font:600 1.05rem var(--display);margin:0 0 10px}
+h3{font:600 .95rem var(--display);margin:14px 0 6px}
+.chip{display:inline-block;font-size:.72rem;padding:1px 8px;border-radius:99px;background:var(--accent-soft);color:var(--accent);font-weight:600}
+.chip.warn{background:transparent;border:1px solid var(--warn);color:var(--warn)}
+.tablebox{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th{font-weight:600;color:var(--muted);font-size:.75rem;letter-spacing:.03em;text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+td.t{font-family:var(--mono);font-weight:500}
+.bar{height:10px;border-radius:2px;background:var(--accent)}
+.alloc{display:grid;gap:8px}
+.alloc .row{display:grid;grid-template-columns:64px minmax(0,1fr) 54px;gap:8px;align-items:center;font-size:.84rem}
+.alloc .track{background:var(--accent-soft);border-radius:2px;position:relative;height:10px}
+.alloc .tgt{position:absolute;top:-3px;width:2px;height:16px;background:var(--ink)}
+form.entry{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;align-items:end}
+label{display:grid;gap:3px;font-size:.78rem;color:var(--muted)}
+input,select,textarea{font:inherit;font-size:.92rem;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%;min-width:0}
+textarea{min-height:90px;resize:vertical}
+.btn{font:600 .88rem var(--display);border:1px solid var(--accent);background:var(--accent);color:var(--surface);border-radius:6px;padding:8px 14px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.small{padding:3px 9px;font-size:.78rem}
+.btn.danger{border-color:var(--loss);color:var(--loss);background:transparent}
+.btn:disabled{opacity:.5;cursor:default}
+.row-actions{display:flex;gap:6px;justify-content:flex-end}
+.empty{border:1px dashed var(--line);border-radius:10px;padding:22px;color:var(--muted);display:grid;gap:10px;justify-items:start}
+.empty strong{color:var(--ink);font-family:var(--display)}
+.banner{background:var(--accent-soft);color:var(--ink);border-radius:8px;padding:8px 12px;font-size:.84rem;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.note{font-size:.8rem;color:var(--muted)}
+svg text{fill:var(--muted);font-family:var(--mono);font-size:11px}
+.article{max-width:68ch}
+.article p{margin:.5em 0}
+.article ul{padding-left:1.2em;margin:.4em 0}
+.analysis{border-top:1px solid var(--line);padding-block:14px}
+.analysis:first-child{border-top:0}
+.analysis .meta{font-size:.78rem;color:var(--muted);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.analysis h3{font-size:1.05rem;margin:4px 0}
+details summary{cursor:pointer;color:var(--accent);font-size:.85rem}
+.status{font-size:.82rem;color:var(--muted);min-height:1.3em}
+.toggle-confirm{display:inline-flex;gap:6px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>สมุดพอร์ต Ped</h1>
+      <div class="sub">หุ้นสหรัฐฯ ผ่าน Dime · คิดต้นทุนแบบถัวเฉลี่ย · แสดงทั้ง USD และ THB</div>
+    </div>
+    <div class="sub" id="priceStamp">กำลังโหลดข้อมูล…</div>
+  </header>
+
+  <div class="banner" id="demoBanner" hidden>
+    <span>ตอนนี้กำลังแสดง <b>ข้อมูลตัวอย่าง</b> ไม่ได้บันทึกลงสมุดจริง</span>
+    <button class="btn small ghost" id="demoOff" type="button">ปิดตัวอย่าง</button>
+  </div>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="overview" aria-selected="true" type="button">ภาพรวม</button>
+    <button role="tab" data-tab="trades" aria-selected="false" type="button">บันทึกรายการ</button>
+    <button role="tab" data-tab="monthly" aria-selected="false" type="button">ลงทุนรายเดือน</button>
+    <button role="tab" data-tab="analysis" aria-selected="false" type="button">บทวิเคราะห์</button>
+    <button role="tab" data-tab="settings" aria-selected="false" type="button">ราคาและเป้าหมาย</button>
+  </nav>
+
+  <!-- OVERVIEW -->
+  <div data-panel="overview">
+    <div id="overviewEmpty" class="empty" hidden>
+      <strong>สมุดยังว่างอยู่</strong>
+      <span>เริ่มจากบันทึกหุ้นที่ถืออยู่ในแท็บ “บันทึกรายการ” (ใส่เป็นรายการซื้อด้วยราคาเฉลี่ยจาก Dime ก็ได้) หรือวาง CSV ทีเดียวทั้งพอร์ต แล้ว Claude จะอัปเดตราคาให้ทุกสัปดาห์</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" type="button" data-goto="trades">เพิ่มรายการแรก</button>
+        <button class="btn ghost" type="button" id="demoOn">ดูหน้าตาด้วยข้อมูลตัวอย่าง</button>
+      </div>
+    </div>
+    <div id="overviewBody">
+      <div class="kpis" id="kpis"></div>
+      <div class="grid2">
+        <section class="panel">
+          <h2>มูลค่าพอร์ตเทียบต้นทุน</h2>
+          <div id="valueChart"></div>
+          <div class="note">จุดข้อมูลมาจาก snapshot ที่ Claude บันทึกทุกสัปดาห์ (หรือกดบันทึกเองในแท็บราคาและเป้าหมาย)</div>
+        </section>
+        <section class="panel">
+          <h2>สัดส่วนพอร์ต <span class="note">แท่ง = ปัจจุบัน, ขีดดำ = เป้าหมาย</span></h2>
+          <div class="alloc" id="alloc"></div>
+        </section>
+      </div>
+      <section class="panel">
+        <h2>หุ้นที่ถืออยู่</h2>
+        <div class="tablebox"><table id="holdingsTable"></table></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- TRADES -->
+  <div data-panel="trades" hidden>
+    <section class="panel" style="margin-bottom:18px">
+      <h2>เพิ่มรายการ</h2>
+      <form class="entry" id="tradeForm" autocomplete="off">
+        <label>วันที่<input type="date" id="tDate" required></label>
+        <label>ประเภท<select id="tType">
+          <option value="buy">ซื้อ</option><option value="sell">ขาย</option><option value="dividend">ปันผล (สุทธิหลังภาษี)</option>
+        </select></label>
+        <label>Ticker<input id="tTicker" placeholder="เช่น VOO" required style="text-transform:uppercase"></label>
+        <label data-for="trade">จำนวนหุ้น<input id="tShares" type="number" step="any" min="0" placeholder="0.5"></label>
+        <label data-for="trade">ราคา/หุ้น (USD)<input id="tPrice" type="number" step="any" min="0"></label>
+        <label data-for="div" hidden>ยอดปันผล (USD)<input id="tAmount" type="number" step="any" min="0"></label>
+        <label>ค่าธรรมเนียม (USD)<input id="tFee" type="number" step="any" min="0" value="0"></label>
+        <label>เรท USD/THB<input id="tFx" type="number" step="any" min="0" placeholder="เช่น 36.20"></label>
+        <label style="grid-column:1/-1">โน้ต (ทำไมถึงซื้อ/ขาย)<input id="tNote" placeholder="เหตุผลสั้น ๆ ช่วยตอนทบทวนทีหลัง"></label>
+        <div><button class="btn" type="submit">บันทึก</button></div>
+      </form>
+      <div class="status" id="tradeStatus"></div>
+      <details>
+        <summary>นำเข้าหลายรายการจาก CSV</summary>
+        <p class="note">หนึ่งบรรทัดต่อรายการ คอลัมน์: <span class="num">date,type,ticker,shares,price,fee,fx,note</span> (type = buy / sell / dividend; ปันผลใส่ยอดรวมในช่อง price และเว้น shares)</p>
+        <textarea id="csvBox" placeholder="2026-09-02,buy,VOO,0.35,560.10,0,36.4,DCA เดือนกันยา"></textarea>
+        <div style="margin-top:8px"><button class="btn ghost" type="button" id="csvImport">นำเข้า</button></div>
+      </details>
+    </section>
+    <section class="panel">
+      <h2>ประวัติรายการ</h2>
+      <div class="tablebox"><table id="tradeTable"></table></div>
+    </section>
+  </div>
+
+  <!-- MONTHLY -->
+  <div data-panel="monthly" hidden>
+    <div class="grid2">
+      <section class="panel">
+        <h2>เงินที่โอนเข้าลงทุนแต่ละเดือน</h2>
+        <div id="monthChart"></div>
+      </section>
+      <section class="panel">
+        <h2>บันทึกเงินเข้าเดือนนี้</h2>
+        <form class="entry" id="depForm" autocomplete="off" style="grid-template-columns:1fr 1fr">
+          <label>เดือน<input type="month" id="dMonth" required></label>
+          <label>จำนวน (บาท)<input type="number" id="dThb" step="any" min="0" required></label>
+          <label>เรท USD/THB<input type="number" id="dFx" step="any" min="0"></label>
+          <label>โน้ต<input id="dNote" placeholder="DCA / โบนัส / ฯลฯ"></label>
+          <div><button class="btn" type="submit">บันทึก</button></div>
+        </form>
+        <div class="status" id="depStatus"></div>
+      </section>
+    </div>
+    <section class="panel">
+      <h2>สรุปรายเดือน</h2>
+      <div class="tablebox"><table id="monthTable"></table></div>
+    </section>
+  </div>
+
+  <!-- ANALYSIS -->
+  <div data-panel="analysis" hidden>
+    <section class="panel" style="margin-bottom:18px">
+      <h2>ถาม Claude เกี่ยวกับพอร์ตตอนนี้</h2>
+      <p class="note">Claude จะเห็นสรุปพอร์ต ราคาล่าสุด และเงินลงทุนรายเดือนจากสมุดนี้ คำตอบเป็นข้อมูลประกอบการตัดสินใจ ไม่ใช่คำแนะนำทางการเงินจากผู้เชี่ยวชาญ</p>
+      <textarea id="askBox" placeholder="เช่น ถ้าเดือนหน้าจะลงเพิ่ม 10,000 บาท ควรเติมตัวไหนให้สัดส่วนกลับเข้าเป้า"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+        <button class="btn" type="button" id="askBtn">ถาม</button>
+        <button class="btn ghost" type="button" id="askSave" hidden>เก็บคำตอบไว้ในบทวิเคราะห์</button>
+      </div>
+      <div class="status" id="askStatus"></div>
+      <div class="article" id="askOut"></div>
+    </section>
+    <section class="panel">
+      <h2>บทวิเคราะห์ที่เก็บไว้</h2>
+      <div id="analysisList"></div>
+    </section>
+  </div>
+
+  <!-- SETTINGS -->
+  <div data-panel="settings" hidden>
+    <div class="grid2">
+      <section class="panel">
+        <h2>ราคาล่าสุด</h2>
+        <p class="note">ปกติ Claude อัปเดตให้ทุกสัปดาห์ แก้เองได้ถ้าอยากเห็นตัวเลขวันนี้</p>
+        <div class="tablebox"><table id="priceTable"></table></div>
+        <form class="entry" id="fxForm" style="margin-top:10px;grid-template-columns:1fr auto">
+          <label>เรท USD/THB<input type="number" id="fxNow" step="any" min="0"></label>
+          <div><button class="btn ghost" type="submit">บันทึกราคา</button></div>
+        </form>
+        <div class="status" id="priceStatus"></div>
+        <div style="margin-top:6px"><button class="btn ghost small" id="snapBtn" type="button">บันทึก snapshot มูลค่าวันนี้</button></div>
+      </section>
+      <section class="panel">
+        <h2>สัดส่วนเป้าหมาย (%)</h2>
+        <p class="note">ใช้คำนวณว่าตัวไหนเกินหรือขาดเป้า และให้ Claude เสนอการเติมเงินรายเดือน</p>
+        <div class="tablebox"><table id="targetTable"></table></div>
+        <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button class="btn ghost" type="button" id="targetSave">บันทึกเป้าหมาย</button>
+          <span class="note" id="targetSum"></span>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const S = { trades:[], deposits:[], analyses:[], snapshots:[], prices:null, targets:{}, demo:false, ready:false };
+let db = null, sample = null, lastAnswer = null;
+const versions = {};
+
+const fUSD = (n,d=2) => (n<0?'-':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fTHB = n => (n<0?'-':'')+'฿'+Math.abs(n).toLocaleString('th-TH',{maximumFractionDigits:0});
+const fPct = n => (n>0?'+':'')+(n*100).toFixed(2)+'%';
+const cls = n => n>0?'pos':n<0?'neg':'';
+const esc = s => String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const today = () => new Date().toISOString().slice(0,10);
+const num = v => { const n = parseFloat(v); return isFinite(n)?n:0; };
+
+/* ---------- domain ---------- */
+function computeHoldings(trades, prices){
+  const by = {};
+  const sorted = [...trades].sort((a,b)=> (a.date||'').localeCompare(b.date||''));
+  let realized = 0, divs = 0, divsTHB = 0;
+  for (const t of sorted){
+    const k = (t.ticker||'').toUpperCase(); if(!k) continue;
+    const h = by[k] ||= {ticker:k, shares:0, cost:0, costTHB:0, realized:0, divs:0};
+    const fx = num(t.fx) || fxNow(prices);
+    if (t.type==='buy'){
+      const c = num(t.shares)*num(t.price)+num(t.fee);
+      h.shares += num(t.shares); h.cost += c; h.costTHB += c*fx;
+    } else if (t.type==='sell' && h.shares>0){
+      const q = Math.min(num(t.shares), h.shares);
+      const avg = h.cost/h.shares, avgT = h.costTHB/h.shares;
+      const r = q*num(t.price) - num(t.fee) - q*avg;
+      h.realized += r; realized += r;
+      h.cost -= q*avg; h.costTHB -= q*avgT; h.shares -= q;
+      if (h.shares < 1e-9){ h.shares = 0; h.cost = 0; h.costTHB = 0; }
+    } else if (t.type==='dividend'){
+      const a = num(t.amount ?? t.price);
+      h.divs += a; divs += a; divsTHB += a*fx;
+    }
+  }
+  const q = (prices && prices.quotes) || {};
+  const list = Object.values(by).filter(h=>h.shares>0).map(h=>{
+    const p = q[h.ticker]?.price;
+    const value = p!=null ? h.shares*p : null;
+    return {...h, avg:h.cost/h.shares, price:p??null, name:q[h.ticker]?.name||'', sector:q[h.ticker]?.sector||'',
+      value, pl: value!=null? value-h.cost : null, plPct: value!=null && h.cost? (value-h.cost)/h.cost : null};
+  });
+  const value = list.reduce((s,h)=>s+(h.value ?? h.cost),0);
+  const cost = list.reduce((s,h)=>s+h.cost,0);
+  const costTHB = list.reduce((s,h)=>s+h.costTHB,0);
+  list.forEach(h=> h.weight = value? (h.value ?? h.cost)/value : 0);
+  list.sort((a,b)=> (b.value??b.cost)-(a.value??a.cost));
+  const missing = list.filter(h=>h.price==null).map(h=>h.ticker);
+  return {list, value, cost, costTHB, realized, divs, divsTHB, missing};
+}
+function fxNow(prices){ return num(prices?.usdthb) || 36; }
+
+/* ---------- demo data (never saved) ---------- */
+const DEMO = {
+  trades:[
+    {id:'d1',date:'2026-05-03',type:'buy',ticker:'VOO',shares:1.2,price:520,fee:0,fx:36.8,note:'ตัวอย่าง'},
+    {id:'d2',date:'2026-06-02',type:'buy',ticker:'MSFT',shares:0.8,price:470,fee:0,fx:36.5,note:'ตัวอย่าง'},
+    {id:'d3',date:'2026-07-02',type:'buy',ticker:'NVDA',shares:2,price:150,fee:0,fx:36.1,note:'ตัวอย่าง'},
+    {id:'d4',date:'2026-08-04',type:'buy',ticker:'VOO',shares:0.6,price:540,fee:0,fx:36.0,note:'ตัวอย่าง'},
+    {id:'d5',date:'2026-09-25',type:'dividend',ticker:'VOO',amount:3.1,fx:36.3,note:'ตัวอย่าง'}
+  ],
+  deposits:[{id:'m1',month:'2026-05',thb:22000,fx:36.8},{id:'m2',month:'2026-06',thb:14000,fx:36.5},{id:'m3',month:'2026-07',thb:11000,fx:36.1},{id:'m4',month:'2026-08',thb:12000,fx:36.0}],
+  prices:{asOf:'ตัวอย่าง',usdthb:36.2,source:'ข้อมูลตัวอย่าง',quotes:{VOO:{price:575,name:'Vanguard S&P 500 ETF',sector:'ETF'},MSFT:{price:505,name:'Microsoft',sector:'Tech'},NVDA:{price:182,name:'NVIDIA',sector:'Semis'}}},
+  snapshots:[{date:'2026-06-30',valueUSD:1000,costUSD:1000},{date:'2026-07-31',valueUSD:1340,costUSD:1300},{date:'2026-08-31',valueUSD:1660,costUSD:1630},{date:'2026-09-30',valueUSD:1800,costUSD:1700}],
+  targets:{VOO:55,MSFT:25,NVDA:20},
+  analyses:[{id:'a1',date:'2026-10-12',kind:'weekly',title:'ตัวอย่างบทวิเคราะห์รายสัปดาห์',summary:'นี่คือหน้าตาของบทวิเคราะห์ที่ Claude จะบันทึกไว้ทุกสัปดาห์',body:'ย่อหน้าแรกสรุปว่าสัปดาห์นี้พอร์ตขยับเพราะอะไร\n\n- ข่าวที่กระทบหุ้นที่ถือ\n- สิ่งที่ควรจับตาสัปดาห์หน้า'}]
+};
+const view = () => S.demo ? DEMO : S;
+
+/* ---------- render ---------- */
+function render(){
+  const V = view();
+  const H = computeHoldings(V.trades, V.prices);
+  const fx = fxNow(V.prices);
+  const isEmpty = !S.demo && S.ready && S.trades.length===0;
+  $('#overviewEmpty').hidden = !isEmpty;
+  $('#overviewBody').hidden = isEmpty;
+  $('#demoBanner').hidden = !S.demo;
+  const p = V.prices;
+  $('#priceStamp').innerHTML = !S.ready && !S.demo ? 'กำลังโหลดข้อมูล…' :
+    p ? `ราคา ณ <span class="num">${esc(p.asOf||'-')}</span> · USD/THB <span class="num">${fx.toFixed(2)}</span>` +
+        (H.missing.length? ` <span class="chip warn">ยังไม่มีราคา ${esc(H.missing.join(', '))}</span>`:'')
+      : '<span class="chip warn">ยังไม่มีราคาล่าสุด</span>';
+  renderKpis(H, V, fx); renderValueChart(V.snapshots, H); renderAlloc(H, V.targets);
+  renderHoldings(H); renderTrades(V.trades); renderMonthly(V, H); renderAnalyses(V.analyses);
+  renderPrices(H, V); renderTargets(H, V.targets);
+}
+function renderKpis(H, V, fx){
+  const pl = H.value - H.cost;
+  const valueTHB = H.value*fx;
+  const fxPl = valueTHB - H.costTHB;
+  const ym = today().slice(0,7);
+  const thisMonth = V.deposits.filter(d=>d.month===ym).reduce((s,d)=>s+num(d.thb),0);
+  const totalDep = V.deposits.reduce((s,d)=>s+num(d.thb),0);
+  const k = [
+    ['มูลค่าพอร์ต', fUSD(H.value), fTHB(valueTHB)],
+    ['กำไร/ขาดทุนที่ยังไม่ขาย', `<span class="${cls(pl)}">${fUSD(pl)}</span>`, `<span class="${cls(pl)}">${H.cost?fPct(pl/H.cost):'–'}</span> ต้นทุน ${fUSD(H.cost)}`],
+    ['กำไรรวมในรูปเงินบาท', `<span class="${cls(fxPl)}">${fTHB(fxPl)}</span>`, `รวมผลค่าเงิน · ต้นทุน ${fTHB(H.costTHB)}`],
+    ['กำไรที่ขายแล้ว + ปันผล', `<span class="${cls(H.realized+H.divs)}">${fUSD(H.realized+H.divs)}</span>`, `ปันผลสุทธิ ${fUSD(H.divs)}`],
+    ['เงินเข้าเดือนนี้', fTHB(thisMonth), `สะสมทั้งหมด ${fTHB(totalDep)}`]
+  ];
+  $('#kpis').innerHTML = k.map(([l,v,a])=>`<div class="kpi"><span class="lab">${l}</span><span class="val">${v}</span><span class="alt">${a}</span></div>`).join('');
+}
+function lineChart(points, opts){
+  if (points.length < 2) return `<div class="empty" style="padding:14px">${opts.empty}</div>`;
+  const W=640,Hh=220,L=56,R=12,T=12,B=28;
+  const xs = points.map((_,i)=>i), ys = points.flatMap(p=>opts.series.map(s=>p[s.key]));
+  let lo=Math.min(...ys), hi=Math.max(...ys); const pad=(hi-lo)*.12||hi*.05||1; lo-=pad; hi+=pad;
+  const X=i=>L+(W-L-R)*i/(xs.length-1), Y=v=>T+(Hh-T-B)*(1-(v-lo)/(hi-lo));
+  const ticks=4, grid=[...Array(ticks+1)].map((_,i)=>lo+(hi-lo)*i/ticks);
+  let g = grid.map(v=>`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${L-6}" y="${Y(v)+4}" text-anchor="end">${opts.fmt(v)}</text>`).join('');
+  const step = Math.max(1, Math.ceil(points.length/6));
+  g += points.map((p,i)=> i%step===0||i===points.length-1 ? `<text x="${X(i)}" y="${Hh-8}" text-anchor="middle">${esc(p.label)}</text>`:'').join('');
+  for (const s of opts.series){
+    const d = points.map((p,i)=>`${i?'L':'M'}${X(i).toFixed(1)},${Y(p[s.key]).toFixed(1)}`).join('');
+    if (s.area) g += `<path d="${d}L${X(points.length-1)},${Hh-B}L${X(0)},${Hh-B}Z" fill="var(--accent-soft)" stroke="none"/>`;
+    g += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${s.w||2}" ${s.dash?'stroke-dasharray="4 4"':''}/>`;
+    const last=points[points.length-1];
+    g += `<circle cx="${X(points.length-1)}" cy="${Y(last[s.key])}" r="3.5" fill="${s.color}"/>`;
+  }
+  const legend = opts.series.map(s=>`<span style="display:inline-flex;align-items:center;gap:5px;margin-right:12px"><span style="width:14px;height:2px;background:${s.color};display:inline-block"></span>${s.name}</span>`).join('');
+  return `<div class="note">${legend}</div><svg viewBox="0 0 ${W} ${Hh}" width="100%" role="img" aria-label="${esc(opts.aria)}">${g}</svg>`;
+}
+function renderValueChart(snaps, H){
+  const pts = [...snaps].sort((a,b)=>a.date.localeCompare(b.date)).map(s=>({label:s.date.slice(2,7).replace('-','/'), v:num(s.valueUSD), c:num(s.costUSD)}));
+  $('#valueChart').innerHTML = lineChart(pts, {aria:'มูลค่าพอร์ตเทียบต้นทุน', fmt:v=>'$'+Math.round(v).toLocaleString('en-US'),
+    empty:'ยังมี snapshot ไม่ถึง 2 จุด กราฟจะขึ้นหลังจาก Claude บันทึกมูลค่ารายสัปดาห์ครบสองครั้ง',
+    series:[{key:'v',name:'มูลค่า',color:'var(--accent)',area:true,w:2.5},{key:'c',name:'ต้นทุน',color:'var(--muted)',dash:true,w:1.5}]});
+}
+function renderAlloc(H, targets){
+  if (!H.list.length){ $('#alloc').innerHTML='<span class="note">ยังไม่มีหุ้นในพอร์ต</span>'; return; }
+  $('#alloc').innerHTML = H.list.map(h=>{
+    const t = num(targets[h.ticker])/100;
+    return `<div class="row"><span class="num">${esc(h.ticker)}</span><div class="track"><div class="bar" style="width:${(h.weight*100).toFixed(1)}%"></div>${t?`<span class="tgt" style="left:calc(${(t*100).toFixed(1)}% - 1px)" title="เป้า ${(t*100).toFixed(0)}%"></span>`:''}</div><span class="num" style="text-align:right">${(h.weight*100).toFixed(1)}%</span></div>`;
+  }).join('');
+}
+function renderHoldings(H){
+  const rows = H.list.map(h=>`<tr><td class="t">${esc(h.ticker)}<div class="note">${esc(h.name)}</div></td>
+    <td class="num">${h.shares.toFixed(4).replace(/\.?0+$/,'')}</td><td class="num">${fUSD(h.avg)}</td>
+    <td class="num">${h.price!=null?fUSD(h.price):'<span class="chip warn">ไม่มีราคา</span>'}</td>
+    <td class="num">${h.value!=null?fUSD(h.value):'–'}</td>
+    <td class="num ${cls(h.pl)}">${h.pl!=null?fUSD(h.pl):'–'}</td><td class="num ${cls(h.plPct)}">${h.plPct!=null?fPct(h.plPct):'–'}</td>
+    <td class="num">${(h.weight*100).toFixed(1)}%</td></tr>`).join('');
+  $('#holdingsTable').innerHTML = `<thead><tr><th>หุ้น</th><th>จำนวน</th><th>ต้นทุนเฉลี่ย</th><th>ราคา</th><th>มูลค่า</th><th>กำไร/ขาดทุน</th><th>%</th><th>สัดส่วน</th></tr></thead><tbody>${rows||'<tr><td colspan="8" class="note">ยังไม่มีหุ้น</td></tr>'}</tbody>`;
+}
+const TYPE_TH = {buy:'ซื้อ',sell:'ขาย',dividend:'ปันผล'};
+function renderTrades(trades){
+  const sorted=[...trades].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const rows = sorted.map(t=>{
+    const total = t.type==='dividend'? num(t.amount??t.price) : num(t.shares)*num(t.price);
+    return `<tr><td class="num">${esc(t.date)}</td><td>${TYPE_TH[t.type]||esc(t.type)}</td><td class="t">${esc(t.ticker)}</td>
+    <td class="num">${t.type==='dividend'?'–':esc(t.shares)}</td><td class="num">${t.type==='dividend'?'–':fUSD(num(t.price))}</td>
+    <td class="num">${fUSD(total)}</td><td class="num">${t.fx?num(t.fx).toFixed(2):'–'}</td>
+    <td style="text-align:left;white-space:normal;min-width:140px" class="note">${esc(t.note)}</td>
+    <td>${S.demo?'':`<span class="toggle-confirm" data-del="${esc(t.id)}"><button class="btn small danger" type="button" data-act="ask">ลบ</button></span>`}</td></tr>`;}).join('');
+  $('#tradeTable').innerHTML = `<thead><tr><th>วันที่</th><th>ประเภท</th><th>หุ้น</th><th>จำนวน</th><th>ราคา</th><th>รวม</th><th>เรท</th><th style="text-align:left">โน้ต</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="9" class="note">ยังไม่มีรายการ</td></tr>'}</tbody>`;
+}
+function renderMonthly(V, H){
+  const byMonth = {};
+  for (const d of V.deposits){ const m=byMonth[d.month] ||= {month:d.month,thb:0,usd:0,bought:0,notes:[]}; m.thb+=num(d.thb); m.usd+= d.fx? num(d.thb)/num(d.fx):0; if(d.note) m.notes.push(d.note); }
+  for (const t of V.trades){ if(t.type!=='buy'||!t.date) continue; const m=byMonth[t.date.slice(0,7)] ||= {month:t.date.slice(0,7),thb:0,usd:0,bought:0,notes:[]}; m.bought += num(t.shares)*num(t.price)+num(t.fee); }
+  const months = Object.values(byMonth).sort((a,b)=>a.month.localeCompare(b.month));
+  // bar chart
+  if (!months.length){ $('#monthChart').innerHTML='<div class="empty" style="padding:14px">บันทึกเงินที่โอนเข้า Dime แต่ละเดือนทางขวา แล้วกราฟจะขึ้นที่นี่</div>'; }
+  else {
+    const W=640,Hh=200,L=56,B=26,T=10; const max=Math.max(...months.map(m=>m.thb),1);
+    const bw=(W-L-10)/months.length;
+    let g=[0,.5,1].map(f=>`<line x1="${L}" x2="${W-10}" y1="${T+(Hh-T-B)*(1-f)}" y2="${T+(Hh-T-B)*(1-f)}" stroke="var(--line)"/><text x="${L-6}" y="${T+(Hh-T-B)*(1-f)+4}" text-anchor="end">${Math.round(max*f/1000)}k</text>`).join('');
+    const avg = months.reduce((s,m)=>s+m.thb,0)/months.length;
+    g+=months.map((m,i)=>{const h=(Hh-T-B)*m.thb/max; return `<rect x="${L+i*bw+bw*.18}" y="${T+(Hh-T-B)-h}" width="${bw*.64}" height="${h}" fill="var(--accent)" rx="2"/>${months.length<=14||i%2===0?`<text x="${L+i*bw+bw/2}" y="${Hh-8}" text-anchor="middle">${m.month.slice(2).replace('-','/')}</text>`:''}`;}).join('');
+    const ay=T+(Hh-T-B)*(1-avg/max);
+    g+=`<line x1="${L}" x2="${W-10}" y1="${ay}" y2="${ay}" stroke="var(--ink)" stroke-dasharray="3 4"/><text x="${W-12}" y="${ay-5}" text-anchor="end">เฉลี่ย ${fTHB(avg)}</text>`;
+    $('#monthChart').innerHTML=`<svg viewBox="0 0 ${W} ${Hh}" width="100%" role="img" aria-label="เงินลงทุนรายเดือน (บาท)">${g}</svg>`;
+  }
+  const rows=[...months].reverse().map(m=>`<tr><td class="num">${m.month}</td><td class="num">${fTHB(m.thb)}</td><td class="num">${m.usd?fUSD(m.usd):'–'}</td><td class="num">${fUSD(m.bought)}</td><td style="text-align:left;white-space:normal" class="note">${esc(m.notes.join(' · '))}</td></tr>`).join('');
+  $('#monthTable').innerHTML=`<thead><tr><th>เดือน</th><th>เงินเข้า (บาท)</th><th>≈ USD</th><th>ซื้อหุ้นจริง</th><th style="text-align:left">โน้ต</th></tr></thead><tbody>${rows||'<tr><td colspan="5" class="note">ยังไม่มีข้อมูล</td></tr>'}</tbody>`;
+}
+function md(s){
+  const lines=String(s||'').split('\n'); let out='', inList=false;
+  const inline=t=>esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\[(.+?)\]\((https?:\/\/[^\s)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+  for (const l of lines){
+    if(/^\s*[-*]\s+/.test(l)){ if(!inList){out+='<ul>';inList=true;} out+='<li>'+inline(l.replace(/^\s*[-*]\s+/,''))+'</li>'; continue; }
+    if(inList){out+='</ul>';inList=false;}
+    if(/^#{1,3}\s/.test(l)) out+='<h3>'+inline(l.replace(/^#+\s/,''))+'</h3>';
+    else if(l.trim()) out+='<p>'+inline(l)+'</p>';
+  }
+  return out+(inList?'</ul>':'');
+}
+const KIND_TH={weekly:'รายสัปดาห์',monthly:'รายเดือน',ask:'ถาม-ตอบ',deep:'เจาะลึก'};
+function renderAnalyses(list){
+  const sorted=[...list].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  $('#analysisList').innerHTML = sorted.length? sorted.map(a=>`<article class="analysis">
+    <div class="meta"><span class="num">${esc(a.date)}</span><span class="chip">${KIND_TH[a.kind]||esc(a.kind)}</span>${a.link?`<a href="${esc(a.link)}" target="_blank" rel="noopener">เปิดฉบับเต็ม ↗</a>`:''}</div>
+    <h3>${esc(a.title)}</h3><p class="note" style="margin:0">${esc(a.summary)}</p>
+    ${a.body?`<details><summary>อ่านเนื้อหา</summary><div class="article">${md(a.body)}</div></details>`:''}</article>`).join('')
+    : '<div class="empty"><strong>ยังไม่มีบทวิเคราะห์</strong><span>ทุกสัปดาห์ Claude จะเขียนสรุปข่าวเทียบกับพอร์ตแล้วเก็บไว้ที่นี่พร้อมลิงก์ฉบับเต็ม คำตอบจากช่อง “ถาม Claude” ก็เก็บไว้ที่นี่ได้</span></div>';
+}
+function renderPrices(H, V){
+  const q=V.prices?.quotes||{};
+  const tickers=[...new Set([...H.list.map(h=>h.ticker),...Object.keys(q)])].sort();
+  $('#priceTable').innerHTML=`<thead><tr><th>หุ้น</th><th>ราคา (USD)</th></tr></thead><tbody>${tickers.map(t=>`<tr><td class="t">${esc(t)}</td><td><input class="num" style="max-width:130px;text-align:right" type="number" step="any" min="0" id="px-${esc(t)}" data-px="${esc(t)}" value="${q[t]?.price??''}" ${S.demo?'disabled':''}></td></tr>`).join('')||'<tr><td colspan="2" class="note">ยังไม่มีหุ้น</td></tr>'}</tbody>`;
+  if(document.activeElement?.id!=='fxNow') $('#fxNow').value = V.prices?.usdthb ?? '';
+  $('#snapBtn').disabled = S.demo || !H.list.length;
+}
+function renderTargets(H, targets){
+  const tickers=[...new Set([...H.list.map(h=>h.ticker),...Object.keys(targets)])].sort();
+  const cur=Object.fromEntries(H.list.map(h=>[h.ticker,h.weight]));
+  $('#targetTable').innerHTML=`<thead><tr><th>หุ้น</th><th>ตอนนี้</th><th>เป้า %</th></tr></thead><tbody>${tickers.map(t=>`<tr><td class="t">${esc(t)}</td><td class="num">${((cur[t]||0)*100).toFixed(1)}%</td><td><input class="num" style="max-width:90px;text-align:right" type="number" step="any" min="0" max="100" id="tg-${esc(t)}" data-tg="${esc(t)}" value="${targets[t]??''}" ${S.demo?'disabled':''}></td></tr>`).join('')||'<tr><td colspan="3" class="note">ยังไม่มีหุ้น</td></tr>'}</tbody>`;
+  const sum=Object.values(targets).reduce((s,v)=>s+num(v),0);
+  $('#targetSum').textContent = sum? `รวม ${sum.toFixed(0)}%${Math.abs(sum-100)>0.5?' (ควรรวมเป็น 100%)':''}`:'';
+}
+
+/* ---------- tabs ---------- */
+function show(tab){
+  $$('nav.tabs button').forEach(b=>b.setAttribute('aria-selected', String(b.dataset.tab===tab)));
+  $$('[data-panel]').forEach(p=>p.hidden = p.dataset.panel!==tab);
+  try{ localStorage.setItem('ledger-tab',tab); }catch(e){}
+}
+$$('nav.tabs button').forEach(b=>b.addEventListener('click',()=>show(b.dataset.tab)));
+document.addEventListener('click',e=>{ const g=e.target.closest('[data-goto]'); if(g) show(g.dataset.goto); });
+const hashTab = location.hash.slice(1);
+let startTab='overview'; try{ startTab = localStorage.getItem('ledger-tab')||startTab; }catch(e){}
+if (['overview','trades','monthly','analysis','settings'].includes(hashTab)) startTab=hashTab;
+show(startTab);
+
+$('#demoOn').addEventListener('click',()=>{ S.demo=true; render(); });
+$('#demoOff').addEventListener('click',()=>{ S.demo=false; render(); });
+
+/* ---------- forms ---------- */
+$('#tDate').value = today();
+$('#dMonth').value = today().slice(0,7);
+$('#tType').addEventListener('change',()=>{
+  const div = $('#tType').value==='dividend';
+  $$('[data-for="trade"]').forEach(l=>l.hidden=div); $$('[data-for="div"]').forEach(l=>l.hidden=!div);
+});
+const needDb = el => { if(!db){ el.textContent='ยังเชื่อมต่อที่เก็บข้อมูลไม่ได้ ลองเปิดหน้านี้ใน claude.ai ขณะล็อกอิน'; return true;} if(S.demo){ el.textContent='ปิดโหมดตัวอย่างก่อนบันทึก'; return true;} return false; };
+$('#tradeForm').addEventListener('submit', async e=>{
+  e.preventDefault(); const st=$('#tradeStatus'); if(needDb(st)) return;
+  const type=$('#tType').value;
+  const rec={date:$('#tDate').value,type,ticker:$('#tTicker').value.trim().toUpperCase(),fee:num($('#tFee').value),fx:num($('#tFx').value)||null,note:$('#tNote').value.trim(),createdAt:new Date().toISOString()};
+  if(type==='dividend'){ rec.amount=num($('#tAmount').value); if(!rec.amount){st.textContent='ใส่ยอดปันผลด้วย';return;} }
+  else { rec.shares=num($('#tShares').value); rec.price=num($('#tPrice').value); if(!rec.shares||!rec.price){st.textContent='ใส่จำนวนหุ้นและราคาด้วย';return;} }
+  if(!rec.ticker){st.textContent='ใส่ ticker ด้วย';return;}
+  try{ await db.collection('trades').add(rec); st.textContent=`บันทึก ${TYPE_TH[type]} ${rec.ticker} แล้ว`; ['#tTicker','#tShares','#tPrice','#tAmount','#tNote'].forEach(s=>$(s).value=''); }
+  catch(err){ st.textContent='บันทึกไม่สำเร็จ: '+(err.message||err.code); }
+});
+$('#csvImport').addEventListener('click', async ()=>{
+  const st=$('#tradeStatus'); if(needDb(st)) return;
+  const lines=$('#csvBox').value.split('\n').map(l=>l.trim()).filter(l=>l && !/^date\s*,/i.test(l));
+  const bad=[]; const recs=[];
+  lines.forEach((l,i)=>{ const [date,type,ticker,shares,price,fee,fx,...note]=l.split(',').map(s=>s.trim());
+    const t=(type||'').toLowerCase();
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!['buy','sell','dividend'].includes(t)||!ticker){bad.push(i+1);return;}
+    const r={date,type:t,ticker:ticker.toUpperCase(),fee:num(fee),fx:num(fx)||null,note:note.join(','),createdAt:new Date().toISOString()};
+    if(t==='dividend') r.amount=num(price); else {r.shares=num(shares);r.price=num(price);}
+    recs.push(r); });
+  if(bad.length){ st.textContent=`บรรทัด ${bad.join(', ')} รูปแบบไม่ถูก ยังไม่ได้นำเข้าอะไร`; return; }
+  st.textContent=`กำลังนำเข้า ${recs.length} รายการ…`;
+  let ok=0; for(const r of recs){ try{ await db.collection('trades').add(r); ok++; }catch(e){} }
+  st.textContent=`นำเข้าแล้ว ${ok}/${recs.length} รายการ`; if(ok===recs.length) $('#csvBox').value='';
+});
+$('#tradeTable').addEventListener('click', async e=>{
+  const box=e.target.closest('[data-del]'); if(!box||!db) return;
+  const act=e.target.dataset.act;
+  if(act==='ask'){ box.innerHTML='<button class="btn small danger" type="button" data-act="yes">ยืนยันลบ</button><button class="btn small ghost" type="button" data-act="no">ไม่</button>'; }
+  else if(act==='no'){ render(); }
+  else if(act==='yes'){ try{ await db.collection('trades').doc(box.dataset.del).delete(); }catch(err){ $('#tradeStatus').textContent='ลบไม่สำเร็จ'; } }
+});
+$('#depForm').addEventListener('submit', async e=>{
+  e.preventDefault(); const st=$('#depStatus'); if(needDb(st)) return;
+  const rec={month:$('#dMonth').value,thb:num($('#dThb').value),fx:num($('#dFx').value)||null,note:$('#dNote').value.trim(),createdAt:new Date().toISOString()};
+  if(!rec.thb){st.textContent='ใส่จำนวนเงินด้วย';return;}
+  try{ await db.collection('deposits').add(rec); st.textContent=`บันทึก ${fTHB(rec.thb)} ของเดือน ${rec.month} แล้ว`; $('#dThb').value=''; $('#dNote').value=''; }
+  catch(err){ st.textContent='บันทึกไม่สำเร็จ'; }
+});
+$('#fxForm').addEventListener('submit', async e=>{
+  e.preventDefault(); const st=$('#priceStatus'); if(needDb(st)) return;
+  const quotes={...(S.prices?.quotes||{})};
+  $$('[data-px]').forEach(i=>{ const t=i.dataset.px; if(i.value!=='') quotes[t]={...(quotes[t]||{}),price:num(i.value)}; });
+  const doc={...(S.prices||{}),quotes,usdthb:num($('#fxNow').value)||S.prices?.usdthb||null,asOf:today(),source:'แก้ไขเองในสมุด'};
+  try{ await db.doc('prices/latest').set(doc); st.textContent='บันทึกราคาแล้ว'; }catch(err){ st.textContent='บันทึกไม่สำเร็จ'; }
+});
+$('#snapBtn').addEventListener('click', async ()=>{
+  const st=$('#priceStatus'); if(needDb(st)) return;
+  const H=computeHoldings(S.trades,S.prices);
+  try{ await db.doc('snapshots/'+today()).set({date:today(),valueUSD:+H.value.toFixed(2),costUSD:+H.cost.toFixed(2),usdthb:fxNow(S.prices),source:'manual'}); st.textContent='บันทึก snapshot วันนี้แล้ว'; }
+  catch(err){ st.textContent='บันทึกไม่สำเร็จ'; }
+});
+$('#targetSave').addEventListener('click', async ()=>{
+  if(needDb($('#targetSum'))) return;
+  const w={}; $$('[data-tg]').forEach(i=>{ if(i.value!=='') w[i.dataset.tg]=num(i.value); });
+  try{ await db.doc('settings/targets').set({weights:w,updatedAt:new Date().toISOString()}); }catch(err){ $('#targetSum').textContent='บันทึกไม่สำเร็จ'; }
+});
+
+/* ---------- ask Claude ---------- */
+function portfolioContext(){
+  const V=view(), H=computeHoldings(V.trades,V.prices);
+  return JSON.stringify({asOf:V.prices?.asOf, usdthb:fxNow(V.prices),
+    holdings:H.list.map(h=>({ticker:h.ticker,name:h.name,shares:+h.shares.toFixed(4),avgCostUSD:+h.avg.toFixed(2),priceUSD:h.price,valueUSD:h.value&&+h.value.toFixed(2),plPct:h.plPct&&+(h.plPct*100).toFixed(2),weightPct:+(h.weight*100).toFixed(2),targetPct:V.targets[h.ticker]??null})),
+    totals:{valueUSD:+H.value.toFixed(2),costUSD:+H.cost.toFixed(2),costTHB:+H.costTHB.toFixed(0),realizedUSD:+H.realized.toFixed(2),dividendsUSD:+H.divs.toFixed(2)},
+    deposits:V.deposits.map(d=>({month:d.month,thb:d.thb})),
+    recentTrades:[...V.trades].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,15).map(t=>({date:t.date,type:t.type,ticker:t.ticker,shares:t.shares,price:t.price,note:t.note}))});
+}
+$('#askBtn').addEventListener('click', async ()=>{
+  const q=$('#askBox').value.trim(), st=$('#askStatus');
+  if(!q){ st.textContent='พิมพ์คำถามก่อน'; return; }
+  if(!sample){ st.textContent='ฟีเจอร์ถาม Claude ใช้ไม่ได้ในมุมมองนี้'; return; }
+  st.textContent='Claude กำลังอ่านพอร์ต…'; $('#askBtn').disabled=true; $('#askSave').hidden=true; $('#askOut').innerHTML='';
+  const prompt=`คุณช่วยนักลงทุนรายย่อยชาวไทยที่ซื้อหุ้นสหรัฐฯ ผ่านแอป Dime วิเคราะห์พอร์ตของเขา
+ตอบเป็นภาษาไทยแบบที่คนเก่งการเงินคุยกับเพื่อน ประโยคสั้น ตรงไปตรงมา ไม่ใช้คำฟุ่มเฟือย ไม่ใช้ขีดยาว
+ใช้ตัวเลขจากข้อมูลด้านล่างเท่านั้น ถ้าต้องใช้ข้อมูลที่ไม่มี (เช่น ข่าวล่าสุด) ให้บอกตรง ๆ ว่าไม่มีในข้อมูล
+แยกให้ชัดว่าอะไรเป็นข้อเท็จจริงจากข้อมูล อะไรเป็นความเห็น ปิดท้ายด้วยสิ่งที่ควรทำต่อ 1-3 ข้อ
+ห้ามรับประกันผลตอบแทน และเตือนสั้น ๆ หนึ่งประโยคว่าไม่ใช่คำแนะนำจากที่ปรึกษาการเงิน
+รูปแบบ: ย่อหน้าสั้น ใช้ "- " สำหรับรายการ ใช้ **ตัวหนา** ได้เล็กน้อย
+
+ข้อมูลพอร์ต (JSON):
+${portfolioContext()}
+
+คำถาม: ${q}`;
+  try{
+    const r=await sample(prompt,{modelTier:'complex',cache:false,onText:({text})=>{ $('#askOut').innerHTML=md(text); }});
+    $('#askOut').innerHTML=md(r.text); lastAnswer={q,text:r.text}; st.textContent=''; $('#askSave').hidden=S.demo||!db;
+  }catch(err){ st.textContent = err.code==='not_granted'?'ยังไม่ได้อนุญาตให้หน้านี้ถาม Claude':err.code==='rate_limited'?'ถามถี่เกินไป รอสักครู่แล้วลองใหม่':'ถามไม่สำเร็จ: '+(err.message||err.code); }
+  finally{ $('#askBtn').disabled=false; }
+});
+$('#askSave').addEventListener('click', async ()=>{
+  if(!lastAnswer||!db) return;
+  try{ await db.collection('analyses').add({date:today(),kind:'ask',title:lastAnswer.q.slice(0,90),summary:lastAnswer.text.split('\n').find(l=>l.trim())?.replace(/\*\*/g,'').slice(0,160)||'',body:lastAnswer.text,createdAt:new Date().toISOString()});
+    $('#askStatus').textContent='เก็บไว้ในบทวิเคราะห์แล้ว'; $('#askSave').hidden=true; }
+  catch(err){ $('#askStatus').textContent='เก็บไม่สำเร็จ'; }
+});
+
+/* ---------- data wiring ---------- */
+render();
+(async ()=>{
+  try{ sample = await window.claude?.use?.('sample') ?? null; }catch(e){ sample=null; }
+  try{ db = await window.claude?.use?.('db') ?? null; }catch(e){ db=null; }
+  if(!db){ S.ready=true; $('#priceStamp').innerHTML='<span class="chip warn">เปิดใน claude.ai เพื่อใช้ที่เก็บข้อมูล</span>'; render(); return; }
+  let pending=6; const done=()=>{ if(--pending<=0){ S.ready=true; } render(); };
+  const coll=(name,key)=>{ let first=true; db.collection(name).onSnapshot(snap=>{ S[key]=snap.docs.map(d=>({id:d.id,...d.data()})); if(first){first=false;done();} else render(); },()=>{ if(first){first=false;done();} }); };
+  coll('trades','trades'); coll('deposits','deposits'); coll('analyses','analyses'); coll('snapshots','snapshots');
+  let f1=true; db.doc('prices/latest').onSnapshot(s=>{ S.prices=s.exists?s.data():null; if(f1){f1=false;done();} else render(); },()=>{ if(f1){f1=false;done();} });
+  let f2=true; db.doc('settings/targets').onSnapshot(s=>{ S.targets=s.exists?(s.data().weights||{}):{}; if(f2){f2=false;done();} else render(); },()=>{ if(f2){f2=false;done();} });
+})();
+})();
+</script>

@@ -1,0 +1,11 @@
+{
+  "name": "invest-stack",
+  "owner": { "name": "Ped" },
+  "plugins": [
+    {
+      "name": "invest-stack",
+      "source": "./plugins/invest-stack",
+      "description": "Investing workflow adapted from pstack: weekly brief, monthly review, trade log, deep dive, DCA plan."
+    }
+  ]
+}
