@@ -20,6 +20,9 @@ Bigdata.com is the default source for finance in this workflow. Brand it exactly
 | Next week's calendar | `bigdata_events_calendar`: `economic_calendar` with `countries:["US"]`, `impacts:["HIGH","MEDIUM"]`, plus `corporate_calendar` with the held ids | Always pass explicit start and end dates for the week. |
 | Daily closes for the weekly chart | `snapshots` written by the daily price task (see below) | Bigdata.com gives the latest price, not a history. |
 | USD/THB | Bank of Thailand reference rate or a quote page via web search | Write it to `prices/latest.usdthb` and each snapshot. |
+| Thai gold (`gold:baht`, `gold:gram`) | Gold Traders Association (goldtraders.or.th) via web search: the buy-back price (ราคารับซื้อ) of 96.5% gold bar per บาททองคำ, in THB. Gram = baht price / 15.244. | Bigdata.com has no spot gold. Use the buy-back price so the value is what Ped could sell for. Write to `prices/latest.alt` with `asOf` and `source`. |
+| Spot gold (`gold:oz`) | XAU/USD from a quote page via web search | USD per troy ounce. |
+| Crypto (`crypto:<SYMBOL>`) | Price in THB from Bitkub's public market page when Ped holds it there, otherwise USD from CoinGecko or CoinMarketCap via web search | Bigdata.com resolves "Bitcoin" to companies, not the coin. Match the currency Ped's cost is in when possible. |
 | Macro series (CPI, yields, payrolls) | Financial Datasets `get_macro_data` | Financial Datasets is connected but its account balance was $0.00 on 2026-10-13, so calls fail until Ped adds credits. Fall back to `bigdata_search` or the BLS/Treasury pages. |
 | Price history for a deep dive | Financial Datasets `get_stock_prices` when it has credits, else the ETF tearsheet returns or web search | |
 
@@ -30,7 +33,8 @@ Bigdata.com returns only the latest price. To get the daily series the weekly ch
 1. Reads `settings/entities.ids` and the held tickers from the ledger.
 2. Calls `bigdata_portfolio_tearsheet` once for all ids plus SPY (`672082`).
 3. Gets USD/THB.
-4. Writes `closes/<YYYY-MM-DD>` = `{date, usdthb, prices: {TICKER: price}, source: "Bigdata.com"}` and refreshes `prices/latest`.
+4. Gets the gold and crypto prices for every `alt` key the ledger's `assets` need (rows above).
+5. Writes `closes/<YYYY-MM-DD>` = `{date, usdthb, prices: {TICKER: price}, alt: {key: {price, currency}}, source}` and refreshes `prices/latest`.
 
 The weekly brief builds `prices.json` for `portfolio_math.py` from the five `closes` docs of the week.
 

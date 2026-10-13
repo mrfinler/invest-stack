@@ -19,6 +19,8 @@ for f in sorted(Path(folder).glob("*.json")):
         continue
     if d.get("usdthb"):
         out["usdthb"][date] = float(d["usdthb"])
+    if d.get("alt"):
+        out["alt"] = d["alt"]  # files are sorted by date, so the last day in the window wins
     for t, px in (d.get("prices") or {}).items():
         out["tickers"].setdefault(t.upper(), {"closes": {}, "source": d.get("source", "")})["closes"][date] = float(px)
 if not out["tickers"]:

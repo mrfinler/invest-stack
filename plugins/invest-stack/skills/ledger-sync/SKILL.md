@@ -14,11 +14,12 @@ The ledger is a claude.ai artifact page with a shared database. Its URL is `ledg
 | `trades/opening-<TICKER>` | Holdings Ped already owned before the ledger: `type` `opening`, `date` (as-of date), `ticker`, `shares`, `price` (average cost per share from Dime), `fx` (average THB per USD, optional). Counted like a buy dated on the as-of date. One doc per ticker. | Ped, through the page's "หุ้นที่ถืออยู่แล้ว" table |
 | `trades/<auto>` | `date` (YYYY-MM-DD), `type` (`buy`, `sell`, `dividend`), `ticker`, `shares`, `price` (USD per share), `amount` (USD, dividends only, net of withholding), `fee` (USD), `fx` (THB per USD on that trade), `note` (Ped's reason), `createdAt` | Ped, or Claude after Ped confirms |
 | `deposits/<auto>` | `month` (YYYY-MM), `thb`, `fx`, `note`, `createdAt` | Ped, or Claude after Ped confirms |
-| `prices/latest` | `asOf`, `source`, `usdthb`, `quotes` {TICKER: {price, name, sector}} | Claude weekly, Ped can override |
-| `snapshots/<YYYY-MM-DD>` | `date`, `valueUSD`, `costUSD`, `usdthb`, `source` | Claude weekly |
+| `assets/<kind>-<id>` | Cash, gold and crypto balances. `kind` (`cash`, `gold`, `crypto`). Cash: `label`, `currency` (`THB`/`USD`), `amount`. Gold: `label`, `unit` (`baht` = บาททองคำ 96.5%, `gram`, `oz`), `qty`, `avgCost`, `costCurrency`. Crypto: `symbol`, `qty`, `avgCost`, `costCurrency`, `venue`. Balances, not transactions: Ped edits them in place. | Ped, or Claude after Ped confirms |
+| `prices/latest` | `asOf`, `source`, `usdthb`, `quotes` {TICKER: {price, name, sector, change1dPct, priceTarget, sentiment}}, `alt` {`gold:baht` / `gold:gram` / `gold:oz` / `crypto:<SYMBOL>`: {price, currency, asOf, source}} | Claude weekly, the page's Bigdata.com button, Ped can override |
+| `snapshots/<YYYY-MM-DD>` | `date`, `valueUSD`, `costUSD` (stocks), `totalTHB`, `totalCostTHB`, `byClassTHB` {stock, cash, gold, crypto}, `usdthb`, `source` | Claude weekly |
 | `closes/<YYYY-MM-DD>` | `date`, `usdthb`, `prices` {TICKER: close}, `source` | Daily price task |
 | `settings/entities` | `ids` {TICKER: Bigdata.com rp_entity_id}, `updatedAt` | Claude or the page's Bigdata.com button |
-| `settings/targets` | `weights` {TICKER: percent}, `updatedAt` | Ped only |
+| `settings/targets` | `classWeights` {stock, cash, gold, crypto: percent of total wealth}, `weights` {TICKER: percent of the stock portfolio}, `updatedAt` | Ped only |
 | `analyses/<auto>` | `date`, `kind` (`weekly`, `monthly`, `ask`, `deep`), `title`, `summary`, `body` (markdown), `link`, `createdAt` | Claude, and the page's Ask Claude box |
 
 ## Read everything
@@ -30,6 +31,7 @@ ArtifactData list  url=<ledger_url> collection=settings  out_dir=work/<id>/ledge
 ArtifactData list  url=<ledger_url> collection=prices    out_dir=work/<id>/ledger
 ArtifactData list  url=<ledger_url> collection=snapshots out_dir=work/<id>/ledger
 ArtifactData list  url=<ledger_url> collection=closes    out_dir=work/<id>/ledger
+ArtifactData list  url=<ledger_url> collection=assets    out_dir=work/<id>/ledger
 ```
 
 Turn the week's closes into the price file:

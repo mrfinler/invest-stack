@@ -9,7 +9,7 @@ This skill routes a portfolio task to a playbook, the same way pstack's poteto-m
 
 ## Who this is for
 
-Ped is a Thai investor who buys US stocks and ETFs through the Dime app. He thinks in baht and buys in dollars, so every result shows both currencies and names the exchange-rate effect separately from the price effect. He reads Thai. Write every reader-facing word in Thai unless he asks otherwise. Tickers, company names and units stay in English.
+Ped is a Thai investor who buys US stocks and ETFs through the Dime app, and also holds cash (THB and USD), gold and crypto. Total wealth is counted in baht. He thinks in baht and buys stocks in dollars, so every result shows both currencies and names the exchange-rate effect separately from the price effect. He reads Thai. Write every reader-facing word in Thai unless he asks otherwise. Tickers, company names and units stay in English.
 
 The source of truth for his holdings is the portfolio ledger artifact. Its URL is `ledger_url` in `invest.config.json` at the repo root. Read and write it only through the **ledger-sync** skill.
 

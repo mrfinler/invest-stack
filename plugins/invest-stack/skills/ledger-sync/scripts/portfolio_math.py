@@ -191,6 +191,47 @@ def main():
         vals = list(out["deposits_by_month"].values())
         out["avg_monthly_deposit_thb"] = round(sum(vals[-6:]) / len(vals[-6:]), 0)
 
+    # whole wealth in THB: stocks plus cash, gold and crypto balances
+    assets = load_docs(Path(a.ledger) / "assets")
+    latest = {d["id"]: d for d in load_docs(Path(a.ledger) / "prices")}.get("latest", {})
+    alt = P.get("alt") or latest.get("alt") or {}
+    fx_end = fx.get(d1) or num(latest.get("usdthb"))
+    if assets and not fx_end:
+        sys.exit("ERROR: no USD/THB rate for the end date; cannot value cash, gold and crypto.")
+    by_class = {"stock": v1 * fx_end if fx_end else None, "cash": 0.0, "gold": 0.0, "crypto": 0.0}
+    cost_class = {"stock": None, "cash": 0.0, "gold": 0.0, "crypto": 0.0}
+    others, unpriced = [], []
+    for s in assets:
+        kind = s.get("kind")
+        key = None
+        if kind == "cash":
+            val = num(s.get("amount")) * (fx_end if s.get("currency") == "USD" else 1)
+            cost = val
+        else:
+            key = f"gold:{s.get('unit') or 'baht'}" if kind == "gold" else f"crypto:{str(s.get('symbol', '')).upper()}"
+            q = num(s.get("qty"))
+            cost = q * num(s.get("avgCost")) * (num(s.get("fx")) or fx_end if s.get("costCurrency") == "USD" else 1)
+            qt = alt.get(key)
+            if not qt or qt.get("price") in (None, ""):
+                unpriced.append(key)
+                val = cost
+            else:
+                val = q * num(qt["price"]) * (fx_end if qt.get("currency") == "USD" else 1)
+        by_class[kind] = by_class.get(kind, 0.0) + val
+        cost_class[kind] = cost_class.get(kind, 0.0) + cost
+        others.append({"kind": kind, "label": s.get("label") or s.get("symbol"), "value_thb": round(val), "cost_thb": round(cost),
+                       "pl_thb": round(val - cost) if kind != "cash" and key not in unpriced else None})
+    total = sum(v for v in by_class.values() if v)
+    class_targets = {k: num(v) for k, v in (settings.get("targets", {}).get("classWeights") or {}).items()}
+    out["wealth_thb"] = {
+        "total": round(total), "by_class": {k: round(v) for k, v in by_class.items() if v is not None},
+        "weights_pct": {k: round(v / total * 100, 2) for k, v in by_class.items() if v and total},
+        "class_targets_pct": class_targets, "other_assets": others,
+        "unpriced": sorted(set(unpriced)),
+    }
+    if unpriced:
+        print(f"WARNING: no price for {sorted(set(unpriced))}; valued at cost. Fill prices/latest.alt.", file=sys.stderr)
+
     if a.dca:
         cash = a.dca
         total = v1 + cash

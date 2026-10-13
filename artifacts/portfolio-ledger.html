@@ -18,8 +18,9 @@
   --accent:#8fa4f0; --accent-soft:#232c48; --gain:#4cc283; --loss:#f07a6d; --warn:#e3a53a; color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-#opTable input{min-width:88px}
-#opTable td{padding-inline:4px}
+#opTable input,.ed input,.ed select{min-width:88px}
+#opTable td,.ed td{padding-inline:4px}
+.ed-actions{margin-top:6px}
 body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--body);margin:0}
 .wrap{max-width:1080px;margin:0 auto;padding-inline:16px;padding-block:20px 64px}
 header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 24px;margin-bottom:14px}
@@ -86,7 +87,7 @@ details summary{cursor:pointer;color:var(--accent);font-size:.85rem}
   <header class="top">
     <div>
       <h1>สมุดพอร์ต Ped</h1>
-      <div class="sub">หุ้นสหรัฐฯ ผ่าน Dime · คิดต้นทุนแบบถัวเฉลี่ย · แสดงทั้ง USD และ THB</div>
+      <div class="sub">หุ้นสหรัฐฯ ผ่าน Dime · เงินสด · ทองคำ · คริปโต · ต้นทุนแบบถัวเฉลี่ย · มูลค่ารวมเป็นบาท</div>
     </div>
     <div class="sub" id="priceStamp">กำลังโหลดข้อมูล…</div>
   </header>
@@ -108,9 +109,10 @@ details summary{cursor:pointer;color:var(--accent);font-size:.85rem}
   <div data-panel="overview">
     <div id="overviewEmpty" class="empty" hidden>
       <strong>สมุดยังว่างอยู่</strong>
-      <span>เริ่มจากใส่หุ้นที่ถืออยู่ตอนนี้ แค่ ticker จำนวนหุ้น และต้นทุนเฉลี่ยจากแอป Dime จากนั้นค่อยบันทึกการซื้อขายใหม่และเงินลงทุนแต่ละเดือนต่อไป</span>
+      <span>เริ่มจากใส่สิ่งที่มีอยู่ตอนนี้: หุ้นสหรัฐฯ จากแอป Dime (ticker จำนวนหุ้น ต้นทุนเฉลี่ย) แล้วก็เงินสด ทองคำ และคริปโต จากนั้นค่อยบันทึกการซื้อขายใหม่และเงินลงทุนแต่ละเดือนต่อไป</span>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn" type="button" data-goto="trades" data-scroll="opening">ใส่หุ้นที่ถืออยู่</button>
+        <button class="btn ghost" type="button" data-goto="trades" data-scroll="otherAssets">ใส่เงินสด ทอง คริปโต</button>
         <button class="btn ghost" type="button" id="demoOn">ดูหน้าตาด้วยข้อมูลตัวอย่าง</button>
       </div>
     </div>
@@ -118,18 +120,25 @@ details summary{cursor:pointer;color:var(--accent);font-size:.85rem}
       <div class="kpis" id="kpis"></div>
       <div class="grid2">
         <section class="panel">
-          <h2>มูลค่าพอร์ตเทียบต้นทุน</h2>
+          <h2>ความมั่งคั่งรวมเทียบต้นทุน</h2>
           <div id="valueChart"></div>
           <div class="note">จุดข้อมูลมาจาก snapshot ที่ Claude บันทึกทุกสัปดาห์ (หรือกดบันทึกเองในแท็บราคาและเป้าหมาย)</div>
         </section>
         <section class="panel">
-          <h2>สัดส่วนพอร์ต <span class="note">แท่ง = ปัจจุบัน, ขีดดำ = เป้าหมาย</span></h2>
+          <h2>สัดส่วน <span class="note">แท่ง = ปัจจุบัน, ขีดดำ = เป้าหมาย</span></h2>
+          <h3 style="margin-top:4px">ตามประเภทสินทรัพย์</h3>
+          <div class="alloc" id="allocClass"></div>
+          <h3>ในพอร์ตหุ้นสหรัฐฯ</h3>
           <div class="alloc" id="alloc"></div>
         </section>
       </div>
-      <section class="panel">
-        <h2>หุ้นที่ถืออยู่</h2>
+      <section class="panel" style="margin-bottom:22px">
+        <h2>หุ้นสหรัฐฯ ที่ถืออยู่</h2>
         <div class="tablebox"><table id="holdingsTable"></table></div>
+      </section>
+      <section class="panel" id="otherPanel">
+        <h2>เงินสด ทองคำ คริปโต</h2>
+        <div class="tablebox"><table id="otherTable"></table></div>
       </section>
     </div>
   </div>
@@ -156,8 +165,26 @@ details summary{cursor:pointer;color:var(--accent);font-size:.85rem}
         <div style="margin-top:8px"><button class="btn ghost" type="button" id="opParse">ใส่ลงตาราง</button></div>
       </details>
     </section>
+    <section class="panel" style="margin-bottom:18px" id="otherAssets">
+      <h2>เงินสด ทองคำ คริปโต</h2>
+      <p class="note" style="margin-top:0">ใส่ยอดที่มีอยู่ตอนนี้ เปลี่ยนเมื่อไหร่ก็แก้ตัวเลขแล้วกดบันทึก ทองใช้หน่วยบาททองคำ (96.5%) กรัม หรือออนซ์ ต้นทุนใส่เป็นบาทหรือดอลลาร์ก็ได้</p>
+      <h3>เงินสด</h3>
+      <div class="tablebox"><table id="ed-cash"></table></div>
+      <div class="ed-actions"><button class="btn ghost small" type="button" data-edadd="cash">+ เพิ่มบัญชี</button></div>
+      <h3>ทองคำ</h3>
+      <div class="tablebox"><table id="ed-gold"></table></div>
+      <div class="ed-actions"><button class="btn ghost small" type="button" data-edadd="gold">+ เพิ่มรายการทอง</button></div>
+      <h3>คริปโต</h3>
+      <div class="tablebox"><table id="ed-crypto"></table></div>
+      <div class="ed-actions"><button class="btn ghost small" type="button" data-edadd="crypto">+ เพิ่มเหรียญ</button></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center">
+        <button class="btn" type="button" id="edSave">บันทึกเงินสด ทอง คริปโต</button>
+        <span class="note" id="edTotal"></span>
+      </div>
+      <div class="status" id="edStatus"></div>
+    </section>
     <section class="panel" style="margin-bottom:18px">
-      <h2>เพิ่มรายการ</h2>
+      <h2>เพิ่มรายการซื้อขายหุ้น</h2>
       <form class="entry" id="tradeForm" autocomplete="off">
         <label>วันที่<input type="date" id="tDate" required></label>
         <label>ประเภท<select id="tType">
@@ -199,7 +226,8 @@ details summary{cursor:pointer;color:var(--accent);font-size:.85rem}
           <label>เดือน<input type="month" id="dMonth" required></label>
           <label>จำนวน (บาท)<input type="number" id="dThb" step="any" min="0" required></label>
           <label>เรท USD/THB<input type="number" id="dFx" step="any" min="0"></label>
-          <label>โน้ต<input id="dNote" placeholder="DCA / โบนัส / ฯลฯ"></label>
+          <label>เงินก้อนนี้ไปที่<select id="dDest"><option value="stock">หุ้นสหรัฐฯ (Dime)</option><option value="gold">ทองคำ</option><option value="crypto">คริปโต</option><option value="cash">พักเป็นเงินสด</option></select></label>
+          <label style="grid-column:1/-1">โน้ต<input id="dNote" placeholder="DCA / โบนัส / ฯลฯ"></label>
           <div><button class="btn" type="submit">บันทึก</button></div>
         </form>
         <div class="status" id="depStatus"></div>
@@ -241,6 +269,9 @@ details summary{cursor:pointer;color:var(--accent);font-size:.85rem}
           <span class="status" id="bdStatus"></span>
         </div>
         <div class="tablebox"><table id="priceTable"></table></div>
+        <h3>ทองคำและคริปโต</h3>
+        <p class="note" style="margin-top:0">Bigdata.com ไม่มีราคาสองกลุ่มนี้ Claude อัปเดตให้จากราคาสมาคมค้าทองคำ (ราคารับซื้อทองแท่ง) และราคาตลาดคริปโตทุกสัปดาห์ หรือแก้เองได้ตรงนี้</p>
+        <div class="tablebox"><table id="altPriceTable"></table></div>
         <form class="entry" id="fxForm" style="margin-top:10px;grid-template-columns:1fr auto">
           <label>เรท USD/THB<input type="number" id="fxNow" step="any" min="0"></label>
           <div><button class="btn ghost" type="submit">บันทึกราคา</button></div>
@@ -250,7 +281,10 @@ details summary{cursor:pointer;color:var(--accent);font-size:.85rem}
       </section>
       <section class="panel">
         <h2>สัดส่วนเป้าหมาย (%)</h2>
-        <p class="note">ใช้คำนวณว่าตัวไหนเกินหรือขาดเป้า และให้ Claude เสนอการเติมเงินรายเดือน</p>
+        <p class="note">ใช้คำนวณว่าส่วนไหนเกินหรือขาดเป้า และให้ Claude เสนอการแบ่งเงินลงทุนรายเดือน</p>
+        <h3>ตามประเภทสินทรัพย์ (% ของความมั่งคั่งรวม)</h3>
+        <div class="tablebox"><table id="classTargetTable"></table></div>
+        <h3>ในพอร์ตหุ้นสหรัฐฯ (% ของหุ้นทั้งหมด)</h3>
         <div class="tablebox"><table id="targetTable"></table></div>
         <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <button class="btn ghost" type="button" id="targetSave">บันทึกเป้าหมาย</button>
@@ -265,7 +299,7 @@ details summary{cursor:pointer;color:var(--accent);font-size:.85rem}
 (() => {
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
-const S = { trades:[], deposits:[], analyses:[], snapshots:[], prices:null, targets:{}, demo:false, ready:false };
+const S = { trades:[], deposits:[], analyses:[], snapshots:[], assets:[], prices:null, targets:{}, classTargets:{}, demo:false, ready:false };
 let db = null, sample = null, lastAnswer = null;
 const versions = {};
 
@@ -319,6 +353,33 @@ function computeHoldings(trades, prices){
 }
 function fxNow(prices){ return num(prices?.usdthb) || 36; }
 
+/* other assets: cash, gold, crypto. Values in THB. */
+const CLASS_TH = {stock:'หุ้นสหรัฐฯ', cash:'เงินสด', gold:'ทองคำ', crypto:'คริปโต'};
+const UNIT_TH = {baht:'บาททองคำ', gram:'กรัม', oz:'ออนซ์'};
+function altKey(a){ return a.kind==='gold' ? 'gold:'+(a.unit||'baht') : a.kind==='crypto' ? 'crypto:'+String(a.symbol||'').toUpperCase() : null; }
+function altLabel(k){ const [c,x]=k.split(':'); return c==='gold' ? `ทองคำ ต่อ 1 ${UNIT_TH[x]||x}` : `${x} ต่อ 1 เหรียญ`; }
+const toTHB = (v,cur,fx) => cur==='USD' ? v*fx : v;
+function assetRow(a, prices, fx){
+  if (a.kind==='cash'){ const v=toTHB(num(a.amount), a.currency||'THB', fx); return {...a, valueTHB:v, costTHB:v, priced:true, pl:null}; }
+  const q=num(a.qty), cost=q*num(a.avgCost);
+  const costTHB = a.costCurrency==='USD' ? cost*(num(a.fx)||fx) : cost;
+  const k=altKey(a), qt=prices?.alt?.[k];
+  const priced = qt && qt.price!=null && qt.price!=='';
+  const valueTHB = priced ? toTHB(q*num(qt.price), qt.currency||'THB', fx) : costTHB;
+  return {...a, key:k, quote:qt||null, valueTHB, costTHB, priced, pl: priced? valueTHB-costTHB : null};
+}
+function computeAll(V){
+  const H = computeHoldings(V.trades, V.prices), fx = fxNow(V.prices);
+  const others = (V.assets||[]).map(a=>assetRow(a, V.prices, fx));
+  const byClass = {stock:H.value*fx, cash:0, gold:0, crypto:0};
+  const costByClass = {stock:H.costTHB, cash:0, gold:0, crypto:0};
+  for (const o of others){ byClass[o.kind]=(byClass[o.kind]||0)+o.valueTHB; costByClass[o.kind]=(costByClass[o.kind]||0)+o.costTHB; }
+  const totalTHB = Object.values(byClass).reduce((s,v)=>s+v,0);
+  const totalCostTHB = Object.values(costByClass).reduce((s,v)=>s+v,0);
+  const altMissing = [...new Set(others.filter(o=>o.kind!=='cash'&&!o.priced).map(o=>o.key))];
+  return {H, fx, others, byClass, costByClass, totalTHB, totalCostTHB, altMissing};
+}
+
 /* ---------- demo data (never saved) ---------- */
 const DEMO = {
   trades:[
@@ -329,9 +390,16 @@ const DEMO = {
     {id:'d5',date:'2026-09-25',type:'dividend',ticker:'VOO',amount:3.1,fx:36.3,note:'ตัวอย่าง'}
   ],
   deposits:[{id:'m1',month:'2026-05',thb:22000,fx:36.8},{id:'m2',month:'2026-06',thb:14000,fx:36.5},{id:'m3',month:'2026-07',thb:11000,fx:36.1},{id:'m4',month:'2026-08',thb:12000,fx:36.0}],
-  prices:{asOf:'ตัวอย่าง',usdthb:36.2,source:'ข้อมูลตัวอย่าง',quotes:{VOO:{price:575,name:'Vanguard S&P 500 ETF',sector:'ETF'},MSFT:{price:505,name:'Microsoft',sector:'Tech'},NVDA:{price:182,name:'NVIDIA',sector:'Semis'}}},
-  snapshots:[{date:'2026-06-30',valueUSD:1000,costUSD:1000},{date:'2026-07-31',valueUSD:1340,costUSD:1300},{date:'2026-08-31',valueUSD:1660,costUSD:1630},{date:'2026-09-30',valueUSD:1800,costUSD:1700}],
+  prices:{asOf:'ตัวอย่าง',usdthb:36.2,source:'ข้อมูลตัวอย่าง',alt:{'gold:baht':{price:43000,currency:'THB'},'crypto:BTC':{price:3100000,currency:'THB'}},quotes:{VOO:{price:575,name:'Vanguard S&P 500 ETF',sector:'ETF'},MSFT:{price:505,name:'Microsoft',sector:'Tech'},NVDA:{price:182,name:'NVIDIA',sector:'Semis'}}},
+  snapshots:[{date:'2026-06-30',valueUSD:1000,costUSD:1000,totalTHB:96000,totalCostTHB:95500},{date:'2026-07-31',valueUSD:1340,costUSD:1300,totalTHB:110500,totalCostTHB:108800},{date:'2026-08-31',valueUSD:1660,costUSD:1630,totalTHB:123800,totalCostTHB:121000},{date:'2026-09-30',valueUSD:1800,costUSD:1700,totalTHB:131600,totalCostTHB:126900}],
   targets:{VOO:55,MSFT:25,NVDA:20},
+  classTargets:{stock:60,cash:15,gold:15,crypto:10},
+  assets:[
+    {id:'cash-d1',kind:'cash',label:'เงินสดใน Dime',currency:'USD',amount:85},
+    {id:'cash-d2',kind:'cash',label:'บัญชีออมทรัพย์',currency:'THB',amount:30000},
+    {id:'gold-d1',kind:'gold',label:'ทองแท่ง 96.5%',unit:'baht',qty:0.5,avgCost:40000,costCurrency:'THB'},
+    {id:'crypto-d1',kind:'crypto',symbol:'BTC',qty:0.004,avgCost:2800000,costCurrency:'THB',venue:'Bitkub'}
+  ],
   analyses:[{id:'a1',date:'2026-10-12',kind:'weekly',title:'ตัวอย่างบทวิเคราะห์รายสัปดาห์',summary:'นี่คือหน้าตาของบทวิเคราะห์ที่ Claude จะบันทึกไว้ทุกสัปดาห์',body:'ย่อหน้าแรกสรุปว่าสัปดาห์นี้พอร์ตขยับเพราะอะไร\n\n- ข่าวที่กระทบหุ้นที่ถือ\n- สิ่งที่ควรจับตาสัปดาห์หน้า'}]
 };
 const view = () => S.demo ? DEMO : S;
@@ -339,33 +407,38 @@ const view = () => S.demo ? DEMO : S;
 /* ---------- render ---------- */
 function render(){
   const V = view();
-  const H = computeHoldings(V.trades, V.prices);
-  const fx = fxNow(V.prices);
-  const isEmpty = !S.demo && S.ready && S.trades.length===0;
+  const A = computeAll(V), H = A.H, fx = A.fx;
+  const isEmpty = !S.demo && S.ready && S.trades.length===0 && S.assets.length===0;
   $('#overviewEmpty').hidden = !isEmpty;
   $('#overviewBody').hidden = isEmpty;
   $('#demoBanner').hidden = !S.demo;
   const p = V.prices;
+  const miss = [...H.missing, ...A.altMissing.map(k=>k.split(':')[1]==='baht'||k.startsWith('gold')?'ทองคำ':k.split(':')[1])];
   $('#priceStamp').innerHTML = !S.ready && !S.demo ? 'กำลังโหลดข้อมูล…' :
     p ? `ราคา ณ <span class="num">${esc(p.asOf||'-')}</span> · USD/THB <span class="num">${fx.toFixed(2)}</span>` +
-        (H.missing.length? ` <span class="chip warn">ยังไม่มีราคา ${esc(H.missing.join(', '))}</span>`:'')
+        (miss.length? ` <span class="chip warn">ยังไม่มีราคา ${esc([...new Set(miss)].join(', '))}</span>`:'')
       : '<span class="chip warn">ยังไม่มีราคาล่าสุด</span>';
-  renderKpis(H, V, fx); renderValueChart(V.snapshots, H); renderAlloc(H, V.targets);
-  renderHoldings(H); renderTrades(V.trades); renderMonthly(V, H); renderAnalyses(V.analyses);
-  renderPrices(H, V); renderTargets(H, V.targets); renderOpening();
+  renderKpis(A, V); renderValueChart(V.snapshots, H); renderAlloc(H, V.targets); renderClassAlloc(A, V.classTargets||{});
+  renderHoldings(H); renderOther(A); renderTrades(V.trades); renderMonthly(V, H); renderAnalyses(V.analyses);
+  renderPrices(H, V); renderAltPrices(A, V); renderTargets(H, V.targets); renderClassTargets(A, V.classTargets||{});
+  renderOpening(); ['cash','gold','crypto'].forEach(k=>renderEditor(k));
 }
-function renderKpis(H, V, fx){
+function renderKpis(A, V){
+  const H=A.H, fx=A.fx;
   const pl = H.value - H.cost;
   const valueTHB = H.value*fx;
   const fxPl = valueTHB - H.costTHB;
+  const alt = A.others.filter(o=>o.kind!=='cash');
+  const altVal = alt.reduce((s,o)=>s+o.valueTHB,0), altPl = alt.reduce((s,o)=>s+(o.pl||0),0), altCost = alt.reduce((s,o)=>s+o.costTHB,0);
   const ym = today().slice(0,7);
   const thisMonth = V.deposits.filter(d=>d.month===ym).reduce((s,d)=>s+num(d.thb),0);
   const totalDep = V.deposits.reduce((s,d)=>s+num(d.thb),0);
   const k = [
-    ['มูลค่าพอร์ต', fUSD(H.value), fTHB(valueTHB)],
-    ['กำไร/ขาดทุนที่ยังไม่ขาย', `<span class="${cls(pl)}">${fUSD(pl)}</span>`, `<span class="${cls(pl)}">${H.cost?fPct(pl/H.cost):'–'}</span> ต้นทุน ${fUSD(H.cost)}`],
-    ['กำไรรวมในรูปเงินบาท', `<span class="${cls(fxPl)}">${fTHB(fxPl)}</span>`, `รวมผลค่าเงิน · ต้นทุน ${fTHB(H.costTHB)}`],
-    ['กำไรที่ขายแล้ว + ปันผล', `<span class="${cls(H.realized+H.divs)}">${fUSD(H.realized+H.divs)}</span>`, `ปันผลสุทธิ ${fUSD(H.divs)}`],
+    ['ความมั่งคั่งรวม', fTHB(A.totalTHB), `≈ ${fUSD(A.totalTHB/fx,0)} · เงินสด ${fTHB(A.byClass.cash)}`],
+    ['หุ้นสหรัฐฯ', fUSD(H.value), `<span class="${cls(pl)}">${fUSD(pl)} (${H.cost?fPct(pl/H.cost):'–'})</span> ยังไม่ขาย`],
+    ['หุ้น: กำไรรวมรูปเงินบาท', `<span class="${cls(fxPl)}">${fTHB(fxPl)}</span>`, `รวมผลค่าเงิน · ต้นทุน ${fTHB(H.costTHB)}`],
+    ['หุ้น: ขายแล้ว + ปันผล', `<span class="${cls(H.realized+H.divs)}">${fUSD(H.realized+H.divs)}</span>`, `ปันผลสุทธิ ${fUSD(H.divs)}`],
+    ['ทองคำ + คริปโต', alt.length?`<span class="${cls(altPl)}">${fTHB(altPl)}</span>`:'–', alt.length?`มูลค่า ${fTHB(altVal)}${altCost?' · '+fPct(altPl/altCost):''}`:'ยังไม่ได้ใส่'],
     ['เงินเข้าเดือนนี้', fTHB(thisMonth), `สะสมทั้งหมด ${fTHB(totalDep)}`]
   ];
   $('#kpis').innerHTML = k.map(([l,v,a])=>`<div class="kpi"><span class="lab">${l}</span><span class="val">${v}</span><span class="alt">${a}</span></div>`).join('');
@@ -391,10 +464,34 @@ function lineChart(points, opts){
   return `<div class="note">${legend}</div><svg viewBox="0 0 ${W} ${Hh}" width="100%" role="img" aria-label="${esc(opts.aria)}">${g}</svg>`;
 }
 function renderValueChart(snaps, H){
-  const pts = [...snaps].sort((a,b)=>a.date.localeCompare(b.date)).map(s=>({label:s.date.slice(2,7).replace('-','/'), v:num(s.valueUSD), c:num(s.costUSD)}));
-  $('#valueChart').innerHTML = lineChart(pts, {aria:'มูลค่าพอร์ตเทียบต้นทุน', fmt:v=>'$'+Math.round(v).toLocaleString('en-US'),
+  const sorted=[...snaps].sort((a,b)=>a.date.localeCompare(b.date));
+  const thb = sorted.length>=2 && sorted.every(s=>s.totalTHB!=null);
+  const pts = sorted.map(s=>({label:s.date.slice(2,7).replace('-','/'), v:num(thb?s.totalTHB:s.valueUSD), c:num(thb?s.totalCostTHB:s.costUSD)}));
+  $('#valueChart').previousElementSibling.textContent = thb ? 'ความมั่งคั่งรวมเทียบต้นทุน (บาท)' : 'พอร์ตหุ้นสหรัฐฯ เทียบต้นทุน (USD)';
+  $('#valueChart').innerHTML = lineChart(pts, {aria:'มูลค่าเทียบต้นทุน', fmt:v=> thb ? '฿'+Math.round(v/1000).toLocaleString('th-TH')+'k' : '$'+Math.round(v).toLocaleString('en-US'),
     empty:'ยังมี snapshot ไม่ถึง 2 จุด กราฟจะขึ้นหลังจาก Claude บันทึกมูลค่ารายสัปดาห์ครบสองครั้ง',
     series:[{key:'v',name:'มูลค่า',color:'var(--accent)',area:true,w:2.5},{key:'c',name:'ต้นทุน',color:'var(--muted)',dash:true,w:1.5}]});
+}
+function allocRow(label, w, t){
+  return `<div class="row"><span class="num" style="font-family:var(--body)">${esc(label)}</span><div class="track"><div class="bar" style="width:${(w*100).toFixed(1)}%"></div>${t?`<span class="tgt" style="left:calc(${(t*100).toFixed(1)}% - 1px)" title="เป้า ${(t*100).toFixed(0)}%"></span>`:''}</div><span class="num" style="text-align:right">${(w*100).toFixed(1)}%</span></div>`;
+}
+function renderClassAlloc(A, ct){
+  if (!A.totalTHB){ $('#allocClass').innerHTML='<span class="note">ยังไม่มีข้อมูล</span>'; return; }
+  $('#allocClass').innerHTML = ['stock','cash','gold','crypto'].filter(c=>A.byClass[c]>0||num(ct[c])>0)
+    .map(c=>allocRow(CLASS_TH[c], A.byClass[c]/A.totalTHB, num(ct[c])/100)).join('');
+}
+function renderOther(A){
+  $('#otherPanel').hidden = !A.others.length;
+  const rows = [...A.others].sort((a,b)=>b.valueTHB-a.valueTHB).map(o=>{
+    const name = o.kind==='crypto' ? `${o.symbol||''}${o.venue?` <span class="note">${esc(o.venue)}</span>`:''}` : esc(o.label||'');
+    const qty = o.kind==='cash' ? `${num(o.amount).toLocaleString('en-US',{maximumFractionDigits:2})} ${esc(o.currency||'THB')}` : o.kind==='gold' ? `${o.qty} ${UNIT_TH[o.unit]||o.unit}` : `${o.qty}`;
+    const cur = c => c==='USD'?'$':'฿';
+    const avg = o.kind==='cash' ? '–' : `${cur(o.costCurrency)}${num(o.avgCost).toLocaleString('en-US',{maximumFractionDigits:2})}`;
+    const px = o.kind==='cash' ? '–' : o.priced ? `${cur(o.quote.currency)}${num(o.quote.price).toLocaleString('en-US',{maximumFractionDigits:2})}` : '<span class="chip warn">ไม่มีราคา</span>';
+    const plPct = o.pl!=null && o.costTHB ? o.pl/o.costTHB : null;
+    return `<tr><td>${name}</td><td style="text-align:left">${CLASS_TH[o.kind]}</td><td class="num">${qty}</td><td class="num">${avg}</td><td class="num">${px}</td><td class="num">${fTHB(o.valueTHB)}</td><td class="num ${cls(o.pl)}">${o.pl!=null?fTHB(o.pl):'–'}</td><td class="num ${cls(plPct)}">${plPct!=null?fPct(plPct):'–'}</td></tr>`;
+  }).join('');
+  $('#otherTable').innerHTML = `<thead><tr><th>รายการ</th><th style="text-align:left">ประเภท</th><th>จำนวน</th><th>ต้นทุนเฉลี่ย</th><th>ราคาล่าสุด</th><th>มูลค่า</th><th>กำไร/ขาดทุน</th><th>%</th></tr></thead><tbody>${rows}</tbody>`;
 }
 function renderAlloc(H, targets){
   if (!H.list.length){ $('#alloc').innerHTML='<span class="note">ยังไม่มีหุ้นในพอร์ต</span>'; return; }
@@ -428,7 +525,9 @@ function renderTrades(trades){
 }
 function renderMonthly(V, H){
   const byMonth = {};
-  for (const d of V.deposits){ const m=byMonth[d.month] ||= {month:d.month,thb:0,usd:0,bought:0,notes:[]}; m.thb+=num(d.thb); m.usd+= d.fx? num(d.thb)/num(d.fx):0; if(d.note) m.notes.push(d.note); }
+  for (const d of V.deposits){ const m=byMonth[d.month] ||= {month:d.month,thb:0,usd:0,bought:0,notes:[]}; m.thb+=num(d.thb); m.usd+= d.fx? num(d.thb)/num(d.fx):0;
+    const dest = d.dest && d.dest!=='stock' ? `${CLASS_TH[d.dest]||d.dest} ${fTHB(num(d.thb))}` : '';
+    const n=[dest, d.note].filter(Boolean).join(': '); if(n) m.notes.push(n); }
   for (const t of V.trades){ if(t.type!=='buy'||!t.date) continue; const m=byMonth[t.date.slice(0,7)] ||= {month:t.date.slice(0,7),thb:0,usd:0,bought:0,notes:[]}; m.bought += num(t.shares)*num(t.price)+num(t.fee); }
   const months = Object.values(byMonth).sort((a,b)=>a.month.localeCompare(b.month));
   // bar chart
@@ -478,8 +577,86 @@ function renderTargets(H, targets){
   const cur=Object.fromEntries(H.list.map(h=>[h.ticker,h.weight]));
   $('#targetTable').innerHTML=`<thead><tr><th>หุ้น</th><th>ตอนนี้</th><th>เป้า %</th></tr></thead><tbody>${tickers.map(t=>`<tr><td class="t">${esc(t)}</td><td class="num">${((cur[t]||0)*100).toFixed(1)}%</td><td><input class="num" style="max-width:90px;text-align:right" type="number" step="any" min="0" max="100" id="tg-${esc(t)}" data-tg="${esc(t)}" value="${targets[t]??''}" ${S.demo?'disabled':''}></td></tr>`).join('')||'<tr><td colspan="3" class="note">ยังไม่มีหุ้น</td></tr>'}</tbody>`;
   const sum=Object.values(targets).reduce((s,v)=>s+num(v),0);
-  $('#targetSum').textContent = sum? `รวม ${sum.toFixed(0)}%${Math.abs(sum-100)>0.5?' (ควรรวมเป็น 100%)':''}`:'';
+  const csum=Object.values(view().classTargets||{}).reduce((s,v)=>s+num(v),0);
+  $('#targetSum').textContent = [csum?`ประเภทรวม ${csum.toFixed(0)}%${Math.abs(csum-100)>0.5?' (ควรเป็น 100%)':''}`:'', sum? `หุ้นรวม ${sum.toFixed(0)}%${Math.abs(sum-100)>0.5?' (ควรเป็น 100%)':''}`:''].filter(Boolean).join(' · ');
 }
+function renderClassTargets(A, ct){
+  if(document.activeElement?.dataset?.ctg) return;
+  $('#classTargetTable').innerHTML=`<thead><tr><th>ประเภท</th><th>ตอนนี้</th><th>เป้า %</th></tr></thead><tbody>${['stock','cash','gold','crypto'].map(c=>`<tr><td>${CLASS_TH[c]}</td><td class="num">${A.totalTHB?(A.byClass[c]/A.totalTHB*100).toFixed(1):'0.0'}%</td><td><input class="num" style="max-width:90px;text-align:right" type="number" step="any" min="0" max="100" id="ctg-${c}" data-ctg="${c}" value="${ct[c]??''}" ${S.demo?'disabled':''}></td></tr>`).join('')}</tbody>`;
+}
+function renderAltPrices(A, V){
+  if(document.activeElement?.dataset?.altpx || document.activeElement?.dataset?.altcur) return;
+  const alt=V.prices?.alt||{};
+  const keys=[...new Set([...A.others.filter(o=>o.key).map(o=>o.key), ...Object.keys(alt)])].sort();
+  const defCur = k => k==='gold:oz' ? 'USD' : k.startsWith('gold') ? 'THB' : 'USD';
+  $('#altPriceTable').innerHTML = keys.length ? `<thead><tr><th>รายการ</th><th>ราคา</th><th>สกุล</th><th>อัปเดต</th></tr></thead><tbody>${keys.map((k,i)=>{
+    const q=alt[k]||{}; const cur=q.currency||defCur(k);
+    return `<tr><td>${esc(altLabel(k))}</td><td><input class="num" style="max-width:140px;text-align:right" type="number" step="any" min="0" id="alt-${i}" data-altpx="${esc(k)}" value="${q.price??''}" ${S.demo?'disabled':''}></td>
+      <td><select id="altc-${i}" data-altcur="${esc(k)}" ${S.demo?'disabled':''}><option ${cur==='THB'?'selected':''}>THB</option><option ${cur==='USD'?'selected':''}>USD</option></select></td>
+      <td class="note">${esc(q.asOf||'')}${q.source?` · ${esc(q.source)}`:''}</td></tr>`;}).join('')}</tbody>`
+    : '<tbody><tr><td class="note">ยังไม่มีทองหรือคริปโตในสมุด</td></tr></tbody>';
+}
+
+/* ---------- cash / gold / crypto editors ---------- */
+const ED = {
+  cash:{ cols:[{f:'label',h:'บัญชี',ph:'เงินสดใน Dime'},{f:'currency',h:'สกุล',opts:[['THB','THB'],['USD','USD']]},{f:'amount',h:'ยอดเงิน',n:1}],
+    blank:()=>({label:'',currency:'THB',amount:''}), ok:r=>r.label&&r.amount!==''&&num(r.amount)>=0, used:r=>r.label||r.amount, need:'ชื่อบัญชีและยอดเงิน' },
+  gold:{ cols:[{f:'label',h:'รายการ',ph:'ทองแท่ง 96.5%'},{f:'unit',h:'หน่วย',opts:[['baht','บาททองคำ'],['gram','กรัม'],['oz','ออนซ์']]},{f:'qty',h:'จำนวน',n:1},{f:'avgCost',h:'ต้นทุนเฉลี่ย/หน่วย',n:1},{f:'costCurrency',h:'สกุลต้นทุน',opts:[['THB','THB'],['USD','USD']]}],
+    blank:()=>({label:'',unit:'baht',qty:'',avgCost:'',costCurrency:'THB'}), ok:r=>r.label&&num(r.qty)>0&&num(r.avgCost)>0, used:r=>r.label||r.qty||r.avgCost, need:'ชื่อ จำนวน และต้นทุนเฉลี่ย' },
+  crypto:{ cols:[{f:'symbol',h:'เหรียญ',ph:'BTC',up:1},{f:'qty',h:'จำนวน',n:1},{f:'avgCost',h:'ต้นทุนเฉลี่ย/เหรียญ',n:1},{f:'costCurrency',h:'สกุลต้นทุน',opts:[['THB','THB'],['USD','USD']]},{f:'venue',h:'เก็บที่',ph:'Bitkub'}],
+    blank:()=>({symbol:'',qty:'',avgCost:'',costCurrency:'THB',venue:''}), ok:r=>r.symbol&&num(r.qty)>0&&num(r.avgCost)>0, used:r=>r.symbol||r.qty||r.avgCost, need:'เหรียญ จำนวน และต้นทุนเฉลี่ย' }
+};
+const edRows={}, edDirty={};
+const newId = k => `${k}-${Date.now().toString(36)}${Math.random().toString(36).slice(2,6)}`;
+function edFromStore(k){
+  const docs=view().assets.filter(a=>a.kind===k);
+  return docs.length ? docs.map(a=>({id:a.id, ...Object.fromEntries(ED[k].cols.map(c=>[c.f, a[c.f]??'']))})) : [{id:newId(k), ...ED[k].blank()}];
+}
+function renderEditor(k, force){
+  if(edDirty[k] && !force) return;
+  if(!edDirty[k]) edRows[k]=edFromStore(k);
+  const dis=S.demo?'disabled':''; const t=$('#ed-'+k); t.className='ed';
+  t.innerHTML=`<thead><tr>${ED[k].cols.map(c=>`<th style="text-align:left">${c.h}</th>`).join('')}<th></th></tr></thead><tbody>${edRows[k].map((r,i)=>`<tr>${ED[k].cols.map(c=>{
+    const id=`ed-${k}-${c.f}-${i}`, attrs=`id="${id}" data-ed="${k}" data-i="${i}" data-f="${c.f}" ${dis}`;
+    return `<td>${c.opts?`<select ${attrs}>${c.opts.map(([v,l])=>`<option value="${v}" ${String(r[c.f])===v?'selected':''}>${l}</option>`).join('')}</select>`
+      : `<input ${attrs} ${c.n?'type="number" step="any" min="0" class="num" style="text-align:right"':''} ${c.up?'style="text-transform:uppercase"':''} placeholder="${esc(c.ph||'')}" value="${esc(r[c.f])}">`}</td>`;}).join('')}
+    <td><button class="btn small ghost" type="button" data-edrm="${k}" data-i="${i}" ${dis}>ลบ</button></td></tr>`).join('')}</tbody>`;
+}
+$('#otherAssets').addEventListener('input', e=>{
+  const d=e.target.dataset; if(!d.ed) return;
+  const col=ED[d.ed].cols.find(c=>c.f===d.f);
+  edRows[d.ed][d.i][d.f] = col.up ? e.target.value.trim().toUpperCase() : e.target.value; edDirty[d.ed]=true;
+});
+$('#otherAssets').addEventListener('change', e=>{ const d=e.target.dataset; if(d.ed){ edRows[d.ed][d.i][d.f]=e.target.value; edDirty[d.ed]=true; } });
+$('#otherAssets').addEventListener('click', e=>{
+  const add=e.target.dataset.edadd, rm=e.target.dataset.edrm;
+  if(add){ if(!edRows[add]) edRows[add]=edFromStore(add); edRows[add].push({id:newId(add), ...ED[add].blank()}); edDirty[add]=true; renderEditor(add,true); $(`#ed-${add}-${ED[add].cols[0].f}-${edRows[add].length-1}`)?.focus(); }
+  if(rm){ edRows[rm].splice(+e.target.dataset.i,1); if(!edRows[rm].length) edRows[rm].push({id:newId(rm), ...ED[rm].blank()}); edDirty[rm]=true; renderEditor(rm,true); }
+});
+$('#edSave').addEventListener('click', async ()=>{
+  const st=$('#edStatus'); if(needDb(st)) return;
+  const writes=[], problems=[];
+  for(const k of ['cash','gold','crypto']){
+    const rows=(edRows[k]||edFromStore(k)).filter(ED[k].used);
+    rows.forEach(r=>{ if(!ED[k].ok(r)) problems.push(`${CLASS_TH[k]}: ต้องมี${ED[k].need}`); });
+    writes.push(...rows.map(r=>({k,r})));
+  }
+  if(problems.length){ st.textContent=[...new Set(problems)].join(' · '); return; }
+  const keep=new Set(writes.map(w=>w.r.id));
+  const stale=S.assets.filter(a=>!keep.has(a.id));
+  $('#edSave').disabled=true; st.textContent='กำลังบันทึก…';
+  try{
+    for(const {k,r} of writes){
+      const doc={kind:k, updatedAt:new Date().toISOString()};
+      for(const c of ED[k].cols) doc[c.f] = c.n ? num(r[c.f]) : String(r[c.f]??'').trim();
+      await db.doc('assets/'+r.id).set(doc);
+    }
+    for(const a of stale) await db.doc('assets/'+a.id).delete();
+    ['cash','gold','crypto'].forEach(k=>edDirty[k]=false);
+    st.textContent=`บันทึกแล้ว ${writes.length} รายการ`+(stale.length?` · ลบออก ${stale.length}`:'');
+  }catch(err){ st.textContent='บันทึกไม่สำเร็จ: '+(err.message||err.code); }
+  finally{ $('#edSave').disabled=false; }
+});
 
 /* ---------- tabs ---------- */
 function show(tab){
@@ -540,7 +717,7 @@ $('#tradeTable').addEventListener('click', async e=>{
 });
 $('#depForm').addEventListener('submit', async e=>{
   e.preventDefault(); const st=$('#depStatus'); if(needDb(st)) return;
-  const rec={month:$('#dMonth').value,thb:num($('#dThb').value),fx:num($('#dFx').value)||null,note:$('#dNote').value.trim(),createdAt:new Date().toISOString()};
+  const rec={month:$('#dMonth').value,thb:num($('#dThb').value),fx:num($('#dFx').value)||null,dest:$('#dDest').value,note:$('#dNote').value.trim(),createdAt:new Date().toISOString()};
   if(!rec.thb){st.textContent='ใส่จำนวนเงินด้วย';return;}
   try{ await db.collection('deposits').add(rec); st.textContent=`บันทึก ${fTHB(rec.thb)} ของเดือน ${rec.month} แล้ว`; $('#dThb').value=''; $('#dNote').value=''; }
   catch(err){ st.textContent='บันทึกไม่สำเร็จ'; }
@@ -549,19 +726,25 @@ $('#fxForm').addEventListener('submit', async e=>{
   e.preventDefault(); const st=$('#priceStatus'); if(needDb(st)) return;
   const quotes={...(S.prices?.quotes||{})};
   $$('[data-px]').forEach(i=>{ const t=i.dataset.px; if(i.value!=='') quotes[t]={...(quotes[t]||{}),price:num(i.value)}; });
-  const doc={...(S.prices||{}),quotes,usdthb:num($('#fxNow').value)||S.prices?.usdthb||null,asOf:today(),source:'แก้ไขเองในสมุด'};
+  const alt={...(S.prices?.alt||{})};
+  $$('[data-altpx]').forEach(i=>{ const k=i.dataset.altpx, cur=document.querySelector(`[data-altcur="${CSS.escape(k)}"]`)?.value||'THB', old=alt[k]||{};
+    if(i.value==='') return;
+    if(num(i.value)!==num(old.price) || cur!==old.currency) alt[k]={price:num(i.value),currency:cur,asOf:today(),source:'แก้เอง'}; });
+  const doc={...(S.prices||{}),quotes,alt,usdthb:num($('#fxNow').value)||S.prices?.usdthb||null,asOf:today(),source:'แก้ไขเองในสมุด'};
   try{ await db.doc('prices/latest').set(doc); st.textContent='บันทึกราคาแล้ว'; }catch(err){ st.textContent='บันทึกไม่สำเร็จ'; }
 });
 $('#snapBtn').addEventListener('click', async ()=>{
   const st=$('#priceStatus'); if(needDb(st)) return;
-  const H=computeHoldings(S.trades,S.prices);
-  try{ await db.doc('snapshots/'+today()).set({date:today(),valueUSD:+H.value.toFixed(2),costUSD:+H.cost.toFixed(2),usdthb:fxNow(S.prices),source:'manual'}); st.textContent='บันทึก snapshot วันนี้แล้ว'; }
+  const A=computeAll(S), H=A.H;
+  const byClassTHB=Object.fromEntries(Object.entries(A.byClass).map(([k,v])=>[k,Math.round(v)]));
+  try{ await db.doc('snapshots/'+today()).set({date:today(),valueUSD:+H.value.toFixed(2),costUSD:+H.cost.toFixed(2),totalTHB:Math.round(A.totalTHB),totalCostTHB:Math.round(A.totalCostTHB),byClassTHB,usdthb:A.fx,source:'manual'}); st.textContent='บันทึก snapshot วันนี้แล้ว'; }
   catch(err){ st.textContent='บันทึกไม่สำเร็จ'; }
 });
 $('#targetSave').addEventListener('click', async ()=>{
   if(needDb($('#targetSum'))) return;
   const w={}; $$('[data-tg]').forEach(i=>{ if(i.value!=='') w[i.dataset.tg]=num(i.value); });
-  try{ await db.doc('settings/targets').set({weights:w,updatedAt:new Date().toISOString()}); }catch(err){ $('#targetSum').textContent='บันทึกไม่สำเร็จ'; }
+  const cw={}; $$('[data-ctg]').forEach(i=>{ if(i.value!=='') cw[i.dataset.ctg]=num(i.value); });
+  try{ await db.doc('settings/targets').set({weights:w,classWeights:cw,updatedAt:new Date().toISOString()}); }catch(err){ $('#targetSum').textContent='บันทึกไม่สำเร็จ'; }
 });
 
 /* ---------- existing holdings (opening positions) ---------- */
@@ -641,8 +824,10 @@ $('#opSave').addEventListener('click', async ()=>{
 
 /* ---------- ask Claude ---------- */
 function portfolioContext(){
-  const V=view(), H=computeHoldings(V.trades,V.prices);
+  const V=view(), A=computeAll(V), H=A.H;
   return JSON.stringify({asOf:V.prices?.asOf, usdthb:fxNow(V.prices),
+    wealthTHB:{total:Math.round(A.totalTHB), cost:Math.round(A.totalCostTHB), byClass:Object.fromEntries(Object.entries(A.byClass).map(([k,v])=>[k,Math.round(v)])), classTargetsPct:V.classTargets||{}},
+    otherAssets:A.others.map(o=>({kind:o.kind,label:o.label||o.symbol,currency:o.currency,amount:o.amount,unit:o.unit,qty:o.qty,avgCost:o.avgCost,costCurrency:o.costCurrency,venue:o.venue,valueTHB:Math.round(o.valueTHB),plTHB:o.pl!=null?Math.round(o.pl):null,priced:o.priced})),
     holdings:H.list.map(h=>({ticker:h.ticker,name:h.name,shares:+h.shares.toFixed(4),avgCostUSD:+h.avg.toFixed(2),priceUSD:h.price,valueUSD:h.value&&+h.value.toFixed(2),plPct:h.plPct&&+(h.plPct*100).toFixed(2),weightPct:+(h.weight*100).toFixed(2),targetPct:V.targets[h.ticker]??null,change1dPct:h.chg1d,analystTargetUSD:h.target,newsSentiment:h.sentiment})),
     priceSource:V.prices?.source||null,
     totals:{valueUSD:+H.value.toFixed(2),costUSD:+H.cost.toFixed(2),costTHB:+H.costTHB.toFixed(0),realizedUSD:+H.realized.toFixed(2),dividendsUSD:+H.divs.toFixed(2)},
@@ -654,7 +839,7 @@ $('#askBtn').addEventListener('click', async ()=>{
   if(!q){ st.textContent='พิมพ์คำถามก่อน'; return; }
   if(!sample){ st.textContent='ฟีเจอร์ถาม Claude ใช้ไม่ได้ในมุมมองนี้'; return; }
   st.textContent='Claude กำลังอ่านพอร์ต…'; $('#askBtn').disabled=true; $('#askSave').hidden=true; $('#askOut').innerHTML='';
-  const prompt=`คุณช่วยนักลงทุนรายย่อยชาวไทยที่ซื้อหุ้นสหรัฐฯ ผ่านแอป Dime วิเคราะห์พอร์ตของเขา
+  const prompt=`คุณช่วยนักลงทุนรายย่อยชาวไทยวิเคราะห์พอร์ตของเขา พอร์ตมีหุ้นสหรัฐฯ ที่ซื้อผ่านแอป Dime รวมกับเงินสด ทองคำ และคริปโต มูลค่ารวมคิดเป็นบาท
 ตอบเป็นภาษาไทยแบบที่คนเก่งการเงินคุยกับเพื่อน ประโยคสั้น ตรงไปตรงมา ไม่ใช้คำฟุ่มเฟือย ไม่ใช้ขีดยาว
 ใช้ตัวเลขจากข้อมูลด้านล่างเท่านั้น ถ้าต้องใช้ข้อมูลที่ไม่มี (เช่น ข่าวล่าสุด) ให้บอกตรง ๆ ว่าไม่มีในข้อมูล
 แยกให้ชัดว่าอะไรเป็นข้อเท็จจริงจากข้อมูล อะไรเป็นความเห็น ปิดท้ายด้วยสิ่งที่ควรทำต่อ 1-3 ข้อ
@@ -738,12 +923,12 @@ render();
   try{ mcp = await window.claude?.use?.('mcp') ?? null; }catch(e){ mcp=null; }
   $('#bdBtn').hidden = !mcp;
   if(!db){ S.ready=true; $('#priceStamp').innerHTML='<span class="chip warn">เปิดใน claude.ai เพื่อใช้ที่เก็บข้อมูล</span>'; render(); return; }
-  let pending=7; const done=()=>{ if(--pending<=0){ S.ready=true; } render(); };
+  let pending=8; const done=()=>{ if(--pending<=0){ S.ready=true; } render(); };
   const coll=(name,key)=>{ let first=true; db.collection(name).onSnapshot(snap=>{ S[key]=snap.docs.map(d=>({id:d.id,...d.data()})); if(first){first=false;done();} else render(); },()=>{ if(first){first=false;done();} }); };
-  coll('trades','trades'); coll('deposits','deposits'); coll('analyses','analyses'); coll('snapshots','snapshots');
+  coll('trades','trades'); coll('deposits','deposits'); coll('analyses','analyses'); coll('snapshots','snapshots'); coll('assets','assets');
   let f1=true; db.doc('prices/latest').onSnapshot(s=>{ S.prices=s.exists?s.data():null; if(f1){f1=false;done();} else render(); },()=>{ if(f1){f1=false;done();} });
   let f3=true; db.doc('settings/entities').onSnapshot(s=>{ S.entities=s.exists?(s.data().ids||{}):{}; if(f3){f3=false;done();} },()=>{ if(f3){f3=false;done();} });
-  let f2=true; db.doc('settings/targets').onSnapshot(s=>{ S.targets=s.exists?(s.data().weights||{}):{}; if(f2){f2=false;done();} else render(); },()=>{ if(f2){f2=false;done();} });
+  let f2=true; db.doc('settings/targets').onSnapshot(s=>{ S.targets=s.exists?(s.data().weights||{}):{}; S.classTargets=s.exists?(s.data().classWeights||{}):{}; if(f2){f2=false;done();} else render(); },()=>{ if(f2){f2=false;done();} });
 })();
 })();
 </script>
