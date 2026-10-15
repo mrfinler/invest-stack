@@ -22,6 +22,8 @@ The ledger is a claude.ai artifact page with a shared database. Its URL is `ledg
 | `settings/app` | `usdthb` (the page writes the live Bigdata.com rate once a day), `fxAsOf`, `fxSource`, `typeTargets` {type: percent of total wealth, optional} | Ped or Claude (targets only after Ped confirms) |
 | `settings/entities` | `ids` {SYMBOL: Bigdata.com rp_entity_id} | The page and Claude |
 
+Folio's asset form asks for outstanding shares (`qty`), cost per share and an optional price now, the way Dime shows a position. It stores `net = qty × cost per share` and `profit = qty × price now − net`; with no price now it uses the live market price when it has one, else cost. When Claude writes a holding from a broker screen, compute `net` and `profit` the same way.
+
 Value of a holding = `net + profit` in its currency, converted at `settings/app.usdthb`. Money invested in THB is `netTHB` for USD holdings, so a holding's THB gain splits into price effect and FX effect.
 
 The page is called Folio and its UI is in English. Live USD/THB, spot gold and crypto prices come from Bigdata.com's `bigdata_market_tearsheet` (a markdown table the page parses). Price history for charts comes from Financial Datasets `get_stock_prices`, which needs credits on that account; without them the page falls back to `pricehist`.

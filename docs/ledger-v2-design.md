@@ -62,3 +62,4 @@ Manual entry is kept to what every app already shows: quantity, net invested and
 - Charts view: price history from Financial Datasets when that account has credits, otherwise Folio's own daily record (`pricehist`), plus a watchlist for symbols not held.
 - Invest / adjust: one dialog for a month's buys, sells and dividends across assets, each line with price, quantity, commission and the USD/THB rate the broker gave. It updates holdings and writes the cost log; deleting a line reverses it exactly.
 - Display font changed to Bricolage Grotesque with IBM Plex Sans and Plex Mono; IBM Plex Sans Thai stays in the stack for Thai names.
+- 2026-10-16: the asset form takes outstanding shares and cost per share (plus an optional price now) instead of money invested and profit, matching how Dime shows a position. Storage is unchanged: `net = shares × cost`, `profit = shares × price − net`. The holdings table shows shares and average cost.

@@ -15,12 +15,12 @@ def shot(name): return os.path.join(OUT, name)
 async def store(pg): return await pg.evaluate('window.__store')
 def find(st, pre, **kv):
     return [v for k,v in st.items() if k.startswith(pre) and all(v.get(a)==b for a,b in kv.items())]
-async def fill_row(pg, idx, typ, sym, qty, net, profit, loss=False, thb=None):
+async def fill_row(pg, idx, typ, sym, qty, cost, price=None, rate=None):
     row = pg.locator('#pfRows [data-row]').nth(idx)
     await row.locator('[data-f=type]').select_option(typ)
-    await row.locator('[data-f=symbol]').fill(sym); await row.locator('[data-f=qty]').fill(qty); await row.locator('[data-f=net]').fill(net); await row.locator('[data-f=profit]').fill(profit)
-    if loss: await row.locator('input[type=radio][value="-1"]').check(force=True)
-    if thb: await row.locator('[data-f=netTHB]').fill(thb)
+    await row.locator('[data-f=symbol]').fill(sym); await row.locator('[data-f=qty]').fill(qty); await row.locator('[data-f=cost]').fill(cost)
+    if price: await row.locator('[data-f=price]').fill(price)
+    if rate: await row.locator('[data-f=rate]').fill(rate)
 async def main():
     async with async_playwright() as p:
         b = await p.chromium.launch()
@@ -31,14 +31,14 @@ async def main():
         await pg.click('#welcome [data-act=new-portfolio]')
         await pg.fill('#pfNameIn','Dime US stocks'); await pg.fill('#pfGoalIn','500,000')
         await pg.click('#pfGlyphs label:nth-child(7)')
-        await fill_row(pg,0,'us_stock','nvda','3.5','520','272', thb='18,000')
-        await pg.click('#pfAddRow'); await fill_row(pg,1,'gold','Gold bar','0.5','20,500','1700')
+        await fill_row(pg,0,'us_stock','nvda','3.5','160','230', rate='32.50')
+        await pg.click('#pfAddRow'); await fill_row(pg,1,'gold','Gold bar','0.5','41,000','44,400')
         await pg.wait_for_timeout(100); await pg.locator('#dlgPf').screenshot(path=shot('02-create.png'))
         await pg.click('#pfSave'); await pg.wait_for_timeout(700)
         st=await store(pg); nv=find(st,'holdings/',symbol='NVDA')[0]; gd=find(st,'holdings/',type='gold')[0]; pf=find(st,'portfolios/')[0]
         print('portfolio icon', pf['icon']); assert pf['icon']=={'kind':'glyph','key':'rocket'}
-        assert nv['netTHB']==18000 and nv['rpId']=='E09E2B', nv
-        assert gd['unit']=='baht', gd
+        assert nv['netTHB']==18200 and nv['rpId']=='E09E2B' and abs(nv['net']-560)<1e-9 and abs(nv['profit']-245)<1e-9 and nv['qty']==3.5, nv
+        assert gd['unit']=='baht' and abs(gd['net']-20500)<1e-9 and abs(gd['profit']-1700)<1e-9, gd
         await pg.wait_for_timeout(300)
         print('compare:', (await pg.inner_text('#pfCompare'))[:200].replace('\n',' '))
         await pg.screenshot(path=shot('03-portfolio.png'), full_page=True)
@@ -54,7 +54,7 @@ async def main():
         await pg.click('#tForm button[value=save]'); await pg.wait_for_timeout(500)
         st=await store(pg); nv=find(st,'holdings/',symbol='NVDA')[0]; voo=find(st,'holdings/',symbol='VOO')[0]; txs=find(st,'transactions/')
         print('NVDA after buy:', {k:nv[k] for k in ('qty','net','netTHB','profit')})
-        assert abs(nv['qty']-4.0)<1e-9 and abs(nv['net']-620.5)<1e-6 and abs(nv['netTHB']-(18000+100.5*33.1))<0.01 and abs(nv['profit']-(4*200-620.5))<0.01
+        assert abs(nv['qty']-4.0)<1e-9 and abs(nv['net']-660.5)<1e-6 and abs(nv['netTHB']-(18200+100.5*33.1))<0.01 and abs(nv['profit']-(4*200-660.5))<0.01
         print('VOO new:', {k:voo[k] for k in ('qty','net','netTHB','profit','currency')})
         assert abs(voo['net']-70.2)<1e-6 and abs(voo['netTHB']-70.2*33.1)<0.01
         assert len(txs)==2 and all(t['fxRate']==33.1 for t in txs) and {t['fee'] for t in txs}=={0.5,0.2}
@@ -63,16 +63,32 @@ async def main():
         await r0.locator('input[type=radio][value=sell]').check(force=True); await r0.locator('[data-t=h]').select_option(label='NVDA · USD'); await r0.locator('[data-t=price]').fill('250'); await r0.locator('[data-t=qty]').fill('1'); await r0.locator('[data-t=fee]').fill('0.5')
         await pg.click('#tForm button[value=save]'); await pg.wait_for_timeout(400)
         st=await store(pg); nv2=find(st,'holdings/',symbol='NVDA')[0]; sell=find(st,'transactions/',kind='sell')[0]
-        avg=620.5/4; print('after sell:', {k:nv2[k] for k in ('qty','net','profit')}, 'realized', sell['realized'])
-        assert abs(nv2['qty']-3)<1e-9 and abs(nv2['net']-(620.5-avg))<0.01 and abs(sell['realized']-(250-0.5-avg))<0.01
+        avg=660.5/4; print('after sell:', {k:nv2[k] for k in ('qty','net','profit')}, 'realized', sell['realized'])
+        assert abs(nv2['qty']-3)<1e-9 and abs(nv2['net']-(660.5-avg))<0.01 and abs(sell['realized']-(250-0.5-avg))<0.01
         assert abs((nv2['net']+nv2['profit'])-(800-250))<0.01, 'value drops by the sale proceeds'
         # delete the sell, undo restores
         await pg.click(f'[data-deltx="{[k for k,v in st.items() if k.startswith("transactions/") and v["kind"]=="sell"][0].split("/")[1]}"]'); await pg.wait_for_timeout(300)
         st=await store(pg); nv3=find(st,'holdings/',symbol='NVDA')[0]
-        assert abs(nv3['qty']-4)<1e-9 and abs(nv3['net']-620.5)<0.01 and abs(nv3['net']+nv3['profit']-800)<0.01, nv3
+        assert abs(nv3['qty']-4)<1e-9 and abs(nv3['net']-660.5)<0.01 and abs(nv3['net']+nv3['profit']-800)<0.01, nv3
         await pg.click('#toastUndo'); await pg.wait_for_timeout(300)
         st=await store(pg); assert find(st,'transactions/',kind='sell'), 'undo restored the sell'
         print('cost summary:', (await pg.inner_text('#costSum')).replace('\n',' | '))
+        # edit dialog: outstanding shares and cost per share
+        nvid=[k for k,v in st.items() if k.startswith('holdings/') and v.get('symbol')=='NVDA'][0].split('/')[1]
+        await pg.click(f'#hTable [data-edit="{nvid}"]'); await pg.wait_for_timeout(200)
+        q,c,pr=[await pg.input_value(f'#hBody [data-f={f}]') for f in ('qty','cost','price')]; print('edit form shares/cost/price:', q, c, pr)
+        cur=find(st,'holdings/',symbol='NVDA')[0]; Q,N=cur['qty'],cur['net']
+        assert float(q)==Q and abs(float(c)-N/Q)<1e-4, (q,c,cur)
+        await pg.fill('#hBody [data-f=price]',''); await pg.wait_for_timeout(50)
+        print('edit preview:', await pg.inner_text('#hBody [data-preview]'))
+        await pg.locator('#dlgH').screenshot(path=shot('04b-edit.png'))
+        await pg.click('#dlgH button[value=save]'); await pg.wait_for_timeout(300)
+        st=await store(pg); nv4=find(st,'holdings/',symbol='NVDA')[0]
+        assert nv4['net']==N and abs(nv4['profit']-(Q*226.32-N))<1e-6, nv4
+        await pg.click(f'#hTable [data-edit="{nvid}"]'); await pg.wait_for_timeout(200); await pg.fill('#hBody [data-f=qty]','5'); await pg.click('#dlgH button[value=save]'); await pg.wait_for_timeout(300)
+        st=await store(pg); nv5=find(st,'holdings/',symbol='NVDA')[0]
+        assert abs(nv5['net']-5*N/Q)<1e-9 and abs(nv5['net']+nv5['profit']-5*226.32)<1e-6, nv5
+        print('edit ok', {k:nv5[k] for k in ('qty','net','profit')})
         await pg.screenshot(path=shot('05-portfolio-after.png'), full_page=True)
         # charts
         await pg.click('.nav button[data-go=charts]'); await pg.wait_for_timeout(600)

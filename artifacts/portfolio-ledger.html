@@ -225,7 +225,6 @@ dialog form{display:flex;flex-direction:column;max-height:inherit}
 .seg input:focus-visible + span{outline:2px solid var(--accent);outline-offset:-2px}
 .seg.sm span{padding:1px 9px;font-size:.74rem}
 .seg.sm{border-radius:7px}
-.profit-head{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:1.3em;margin-top:-4px}
 .hrow{border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--raised);display:grid;gap:12px}
 .preview{display:flex;gap:14px;flex-wrap:wrap;align-items:baseline;font-size:.82rem;color:var(--muted);padding:8px 12px;background:var(--bg);border-radius:10px}
 .preview b{font:600 1rem var(--num);color:var(--ink)}
@@ -294,10 +293,10 @@ dialog form{display:flex;flex-direction:column;max-height:inherit}
         <div class="mark-line"></div>
         <span class="eyebrow">Welcome to Folio</span>
         <h1>Every portfolio you own, in one book, counted in baht.</h1>
-        <p class="muted" style="margin:0;max-width:52ch">US stocks, Thai funds, gold, crypto or savings. Enter the quantity, what you put in and today's profit. Folio works out value, allocation and how you are doing against the money invested.</p>
+        <p class="muted" style="margin:0;max-width:52ch">US stocks, Thai funds, gold, crypto or savings. Enter how many shares you hold and your cost per share. Folio prices them from the market where it can and works out value, profit and allocation.</p>
         <ol class="steps">
           <li><div><b>Create a portfolio</b><span class="muted small">Name it, pick an icon and a colour. “Retirement”, “Dime US stocks”, anything.</span></div></li>
-          <li><div><b>Add what you hold</b><span class="muted small">Quantity, money in and current profit. Copy the numbers from the app you already use.</span></div></li>
+          <li><div><b>Add what you hold</b><span class="muted small">Outstanding shares and cost per share, as your broker app shows them.</span></div></li>
           <li><div><b>Log each month's investment</b><span class="muted small">Price, quantity, commission and the exchange rate you got. The charts start telling the story.</span></div></li>
         </ol>
         <div class="row">
@@ -804,15 +803,15 @@ function renderPf(){
     const thbPl = h.currency==='USD'? toTHB(v,'USD')-hNetTHB(h) : null;
     return `<tr class="h-row" data-edit="${esc(h.id)}" tabindex="0">
       <td><div class="asset">${badge(h)}<div><div class="nm">${esc(h.name||h.symbol)}</div><div class="sub">${sub(h)}</div></div></div></td>
-      <td class="num">${fQty(num(h.qty))}</td><td class="num">${fCur(num(h.net),h.currency)}${fxBit(h)}</td>
+      <td class="num">${h.type==='cash'?'–':fQty(num(h.qty))}</td><td class="num">${h.type!=='cash'&&num(h.qty)?fCur(num(h.net)/num(h.qty),h.currency,2):'–'}<div class="small muted">invested ${fCur(num(h.net),h.currency)}</div>${fxBit(h)}</td>
       <td class="num ${tone(num(h.profit))}"><span aria-hidden="true">${arrow(num(h.profit))}</span> ${fSign(num(h.profit),x=>fCur(x,h.currency))}<div class="small">${pct==null?'':fPct(pct)}</div></td>
       <td class="num">${fCur(v,h.currency)}${thbPl!=null?`<div class="small ${tone(thbPl)}">${fTHB(toTHB(v,'USD'))} · ${fSign(thbPl,fTHB)} in THB</div>`:''}</td>
       <td class="num">${(w*100).toFixed(1)}%</td>
       <td style="text-align:left">${l?`<span class="live" title="Market price vs the average price implied by your saved value"><span class="livedot"></span>${fCur(l.price,h.currency,2)}${l.estimate?'*':''} <span class="${tone(l.diff)}">${l.diff==null?'':fPct(l.diff)}</span></span> `:''}${linksHTML(h)}</td></tr>`; }).join('');
-  $('#hTable').innerHTML=`<thead><tr><th>Asset</th><th>Qty</th><th>Invested</th><th>Profit</th><th>Value</th><th>Weight</th><th style="text-align:left">Market &amp; links</th></tr></thead><tbody>${rows||'<tr><td colspan="7"><div class="blank">No assets yet. Use “+ Add asset”.</div></td></tr>'}</tbody>`;
+  $('#hTable').innerHTML=`<thead><tr><th>Asset</th><th>Shares</th><th>Avg cost</th><th>Profit</th><th>Value</th><th>Weight</th><th style="text-align:left">Market &amp; links</th></tr></thead><tbody>${rows||'<tr><td colspan="7"><div class="blank">No assets yet. Use “+ Add asset”.</div></td></tr>'}</tbody>`;
   $('#hCards').innerHTML = hs.map(h=>{ const v=hVal(h), pct=num(h.net)?num(h.profit)/num(h.net):null, l=liveFor(h);
     return `<div class="h-card" role="button" tabindex="0" data-edit="${esc(h.id)}"><div class="asset">${badge(h)}<div><div class="nm">${esc(h.name||h.symbol)}</div><div class="sub">${sub(h)}</div></div></div>
-      <div class="kv"><div><div class="k">Value</div><div class="v">${fCur(v,h.currency)}</div></div><div><div class="k">Profit</div><div class="v ${tone(num(h.profit))}">${arrow(num(h.profit))} ${pct==null?'–':fPct(pct)}</div></div><div><div class="k">Qty</div><div class="v">${fQty(num(h.qty))}</div></div></div>
+      <div class="kv"><div><div class="k">Value</div><div class="v">${fCur(v,h.currency)}</div></div><div><div class="k">Profit</div><div class="v ${tone(num(h.profit))}">${arrow(num(h.profit))} ${pct==null?'–':fPct(pct)}</div></div><div><div class="k">Shares · avg cost</div><div class="v">${h.type==='cash'||!num(h.qty)?'–':`${fQty(num(h.qty))} · ${fCur(num(h.net)/num(h.qty),h.currency,2)}`}</div></div></div>
       <div class="row" style="gap:6px">${l?`<span class="live"><span class="livedot"></span>${fCur(l.price,h.currency,2)} <span class="${tone(l.diff)}">${l.diff==null?'':fPct(l.diff)}</span></span>`:''}${linksHTML(h)}</div></div>`; }).join('') || '<div class="blank">No assets yet.</div>';
   // cost log
   const buys=txs.filter(t=>t.kind==='buy'), sells=txs.filter(t=>t.kind==='sell'), divs=txs.filter(t=>t.kind==='dividend');
@@ -994,47 +993,74 @@ function hideToast(){ if(hasPopover){ try{ toastEl.hidePopover(); }catch(e){} } 
 $('#toastUndo').addEventListener('click', async()=>{ const f=undoFn; hideToast(); if(f) await f(); });
 
 /* ---------------- asset fields (shared) ---------------- */
+const QLABEL = {us_stock:['Outstanding shares','Cost per share','Price now (per share)'], th_stock:['Outstanding shares','Cost per share','Price now (per share)'],
+  fund:['Units','Cost per unit','NAV now (per unit)'], crypto:['Coins','Cost per coin','Price now (per coin)'], bond:['Units','Cost per unit','Price now (per unit)'],
+  other:['Units','Cost per unit','Price now (per unit)'], cash:['Amount','',''], gold:['Weight','Cost per','Price now (per']};
+function qLabels(type, unit){
+  if(type==='gold'){ const u={baht:'baht-weight',gram:'gram',oz:'oz'}[unit||'baht']||unit; return [`Weight (${u})`, `Cost per ${u}`, `Price now (per ${u})`]; }
+  return QLABEL[type]||QLABEL.other;
+}
+const nIn = x => x==null||x===''||!isFinite(x) ? '' : String(Math.round(Number(x)*1e4)/1e4);
 function holdingFields(k, h={}){
-  const type=h.type||'us_stock', cur=h.currency||TYPES[type].cur, profit=num(h.profit);
-  const usd = cur==='USD';
-  return `<div class="hrow" data-row="${k}">
+  const type=h.type||'us_stock', cur=h.currency||TYPES[type].cur, usd = cur==='USD';
+  const q=num(h.qty), hasQ=q>0, net=num(h.net), val=hVal(h);
+  const qtyStr = type==='cash' ? nIn(q||net||'') : (hasQ? nIn(q) : '');
+  const costStr = hasQ? nIn(net/q) : '', priceStr = hasQ && h.id ? nIn(val/q) : '';
+  const rateStr = usd && net && h.netTHB ? nIn(num(h.netTHB)/net) : '';
+  const [lq,lc,lp]=qLabels(type,h.unit);
+  return `<div class="hrow" data-row="${k}" data-oq="${esc(qtyStr)}" data-on="${h.id?net:''}" data-ov="${h.id?val:''}" data-oc="${esc(costStr)}" data-op="${esc(priceStr)}">
     <div class="f3">
       <label class="field">Type<select data-f="type">${Object.entries(TYPES).map(([v,t])=>`<option value="${v}" ${v===type?'selected':''}>${t.en}</option>`).join('')}</select></label>
       <label class="field">Name or symbol<input data-f="symbol" value="${esc(h.symbol||h.name||'')}" placeholder="VOO, SCBS&P500, Gold bar" autocomplete="off" required></label>
       <label class="field">Currency<select data-f="currency"><option ${!usd?'selected':''}>THB</option><option ${usd?'selected':''}>USD</option></select></label>
     </div>
     <div class="f3">
-      <label class="field">Quantity<input data-f="qty" inputmode="decimal" pattern="[0-9,]*\\.?[0-9]*" value="${h.qty!=null&&h.qty!==''?esc(h.qty):''}" placeholder="1.25" autocomplete="off"></label>
-      <label class="field">Money invested<input data-f="net" inputmode="decimal" required pattern="[0-9,]*\\.?[0-9]+" value="${h.net!=null&&h.net!==''?esc(h.net):''}" placeholder="10,000" autocomplete="off"></label>
-      <div class="field">
-        <div class="profit-head"><span>Right now</span><span class="seg sm" role="radiogroup" aria-label="Profit or loss"><label><input type="radio" name="sign-${k}" value="1" ${profit>=0?'checked':''}><span>Profit</span></label><label><input type="radio" name="sign-${k}" value="-1" ${profit<0?'checked':''}><span>Loss</span></label></span></div>
-        <input data-f="profit" inputmode="decimal" pattern="[0-9,]*\\.?[0-9]*" value="${profit?esc(Math.abs(profit)):''}" placeholder="0" aria-label="Profit or loss amount" autocomplete="off">
-      </div>
+      <label class="field"><span data-lq>${lq}</span><input data-f="qty" inputmode="decimal" required pattern="[0-9,]*\\.?[0-9]+" value="${esc(qtyStr)}" placeholder="10" autocomplete="off"></label>
+      <label class="field" data-noncash ${type==='cash'?'hidden':''}><span data-lc>${lc}</span><input data-f="cost" inputmode="decimal" pattern="[0-9,]*\\.?[0-9]+" value="${esc(costStr)}" placeholder="152.40" autocomplete="off"></label>
+      <label class="field" data-noncash ${type==='cash'?'hidden':''}><span data-lp>${lp}</span><input data-f="price" inputmode="decimal" pattern="[0-9,]*\\.?[0-9]*" value="${esc(priceStr)}" placeholder="same as cost" autocomplete="off"></label>
     </div>
     <div class="f3" data-extra>
-      <label class="field" data-usd ${usd?'':'hidden'}>THB actually paid (optional)<input data-f="netTHB" inputmode="decimal" pattern="[0-9,]*\\.?[0-9]*" value="${h.netTHB?esc(r2(h.netTHB)):''}" placeholder="from your statement" autocomplete="off"></label>
+      <label class="field" data-usd ${usd&&type!=='cash'?'':'hidden'}>Avg USD/THB you paid (optional)<input data-f="rate" inputmode="decimal" pattern="[0-9,]*\\.?[0-9]*" value="${esc(rateStr)}" placeholder="${fx().toFixed(2)} today" autocomplete="off"></label>
       <label class="field" data-gold ${type==='gold'?'':'hidden'}>Gold unit<select data-f="unit">${Object.entries(GOLD_UNITS).map(([v,l])=>`<option value="${v}" ${v===(h.unit||'baht')?'selected':''}>${l}</option>`).join('')}</select></label>
     </div>
     <div class="preview" data-preview></div>
   </div>`;
 }
+// market price for a row being typed, when Folio has one
+function rowLive(r){ if(!r.symbol && r.type!=='gold') return null; return livePrice({type:r.type, symbol:r.symbol, currency:r.currency, unit:r.unit, rpId: r.type==='us_stock'? S.entities[r.symbol] : null}); }
 function readRow(row){
   const g=f=>row.querySelector(`[data-f="${f}"]`)?.value?.trim()??'';
-  const sign=Number(row.querySelector('input[type=radio]:checked')?.value||1);
   const sym=g('symbol'), type=g('type');
   const isTicker = /^[A-Za-z0-9.&\-]{1,20}$/.test(sym) && ['us_stock','th_stock','crypto','fund'].includes(type);
-  const currency=g('currency');
-  return {type, symbol:isTicker?sym.toUpperCase():'', name:isTicker?sym.toUpperCase():sym, currency, qty:num(g('qty')), net:num(g('net')), profit:sign*num(g('profit')),
-    netTHB: currency==='USD'? (num(g('netTHB'))||null) : null, unit: type==='gold'? g('unit') : undefined, _raw:{net:g('net'), sym}};
+  const currency=g('currency'), cash=type==='cash', d=row.dataset;
+  const qRaw=g('qty'), cRaw=cash?'1':g('cost'), pRaw=cash?'1':g('price');
+  const qty=num(qRaw), oq=num(d.oq), on=num(d.on), ov=num(d.ov);
+  // keep the saved figures exact when a field was not touched (the form shows them rounded)
+  const cost = cash? 1 : (cRaw===d.oc && oq ? on/oq : num(cRaw));
+  const r={type, symbol:isTicker?sym.toUpperCase():'', name:isTicker?sym.toUpperCase():sym, currency, unit: type==='gold'? g('unit') : undefined};
+  const live = cash? null : rowLive(r);
+  const price = cash? 1 : pRaw!=='' ? (pRaw===d.op && oq ? ov/oq : num(pRaw)) : (live? live.price : cost);
+  const net = cRaw===d.oc && qRaw===d.oq && d.on!=='' ? on : qty*cost;
+  const value = pRaw===d.op && qRaw===d.oq && d.ov!=='' && !cash ? ov : qty*price;
+  const rate = num(g('rate'));
+  return {...r, qty, cost, price, net, profit:value-net, priceFrom: pRaw!==''||cash ? 'you' : live ? 'market' : 'cost', live,
+    netTHB: currency==='USD' && !cash ? (rate? net*rate : null) : null,
+    _raw:{sym, filled: qRaw!==''||(!cash&&g('cost')!==''), complete: qRaw!=='' && cRaw!==''}};
 }
 function updatePreview(row){
-  const r=readRow(row), v=r.net+r.profit, pct=r.net? r.profit/r.net : null;
-  row.querySelector('[data-usd]').hidden = r.currency!=='USD';
+  const r=readRow(row), v=r.net+r.profit, pct=r.net? r.profit/r.net : null, cash=r.type==='cash';
+  row.querySelector('[data-usd]').hidden = r.currency!=='USD' || cash;
   row.querySelector('[data-gold]').hidden = r.type!=='gold';
+  row.querySelectorAll('[data-noncash]').forEach(el=>el.hidden=cash);
+  const [lq,lc,lp]=qLabels(r.type,r.unit); row.querySelector('[data-lq]').textContent=lq; row.querySelector('[data-lc]').textContent=lc; row.querySelector('[data-lp]').textContent=lp;
+  const pIn=row.querySelector('[data-f="price"]'); pIn.placeholder = r.live? `market ${nIn(r.live.price)}` : 'same as cost';
+  if(!r._raw.complete){ const on=num(row.dataset.on);
+    row.querySelector('[data-preview]').innerHTML = on && !num(row.dataset.oq) ? `Saved without a share count (invested ${fCur(on,r.currency)}). Enter the shares and cost per share.` : cash? 'Enter the amount.' : 'Enter the shares and the cost per share to see the value here.'; return; }
   let fxTxt='';
-  if(r.currency==='USD' && r.net){ const paid=r.netTHB||r.net*fx(); const now=v*fx(); fxTxt=`<span>avg rate ${(paid/r.net).toFixed(2)} · in THB ${fTHB(now)} <span class="${tone(now-paid)}">${fSign(now-paid,fTHB)}</span></span>`; }
-  row.querySelector('[data-preview]').innerHTML = r._raw.net==='' ? 'Enter the money invested to see the value here.' :
-    `Value <b>${fCur(v,r.currency)}</b><span class="${tone(r.profit)}">${arrow(r.profit)} ${pct==null?'–':fPct(pct)}</span>${fxTxt}${r.qty? `<span>avg ${fCur(v/r.qty,r.currency,2)}/unit</span>`:''}`;
+  if(r.currency==='USD' && r.net && !cash){ const paid=r.netTHB||r.net*fx(); const now=v*fx(); fxTxt=`<span>in THB ${fTHB(now)} <span class="${tone(now-paid)}">${fSign(now-paid,fTHB)}</span></span>`; }
+  const src = r.priceFrom==='market' ? `<span class="live"><span class="livedot"></span>at market ${fCur(r.price,r.currency,2)}${r.live.estimate?'*':''}</span>` : r.priceFrom==='cost' ? '<span>valued at cost</span>' : '';
+  row.querySelector('[data-preview]').innerHTML = cash ? `Value <b>${fCur(v,r.currency)}</b>` :
+    `Invested <b>${fCur(r.net,r.currency)}</b> Value <b>${fCur(v,r.currency)}</b><span class="${tone(r.profit)}">${arrow(r.profit)} ${fSign(r.profit,x=>fCur(x,r.currency))} · ${pct==null?'–':fPct(pct)}</span>${src}${fxTxt}`;
 }
 function wireRows(container, onChange){
   container.addEventListener('input', e=>{ const row=e.target.closest('[data-row]'); if(row){ updatePreview(row); onChange?.(); } });
@@ -1043,14 +1069,16 @@ function wireRows(container, onChange){
     updatePreview(row); onChange?.(); });
 }
 function validRows(container){
-  let ok=true; container.querySelectorAll('[data-row]').forEach(row=>{ const r=readRow(row); if(!r._raw.sym && r._raw.net==='') return;
-    row.querySelectorAll('input[pattern]').forEach(i=>{ if(!i.checkValidity()) ok=false; });
-    if(!r._raw.sym || r._raw.net==='') ok=false; });
+  let ok=true; container.querySelectorAll('[data-row]').forEach(row=>{ const r=readRow(row); if(!r._raw.sym && !r._raw.filled) return;
+    row.querySelectorAll('input[pattern]').forEach(i=>{ if(!i.closest('[hidden]') && !i.checkValidity()) ok=false; });
+    if(!r._raw.sym || !r._raw.complete) ok=false; });
   return ok;
 }
+function firstInvalid(row){ const r=readRow(row); if(!r._raw.sym) return row.querySelector('[data-f="symbol"]');
+  return [...row.querySelectorAll('input[pattern]')].find(i=>!i.closest('[hidden]') && (!i.checkValidity() || (i.required||i.dataset.f==='cost') && !i.value.trim())) || row.querySelector('[data-f="qty"]'); }
 function holdingDoc(r, base){
   const doc={...base, type:r.type, symbol:r.symbol, name:r.name, currency:r.currency, qty:r.qty, net:r.net, profit:r.profit, valuedAt:today(), updatedAt:new Date().toISOString()};
-  if(r.currency==='USD') doc.netTHB = r.netTHB || (base.netTHB && base.net===r.net ? base.netTHB : r2(r.net*fx())); else delete doc.netTHB;
+  if(r.currency==='USD' && r.type!=='cash') doc.netTHB = r.netTHB ? r2(r.netTHB) : (base.netTHB && base.net===r.net ? base.netTHB : r2(r.net*fx())); else delete doc.netTHB;
   if(r.type==='gold') doc.unit=r.unit||'baht'; else delete doc.unit;
   return doc;
 }
@@ -1092,7 +1120,7 @@ $('#pfImg').addEventListener('change', async e=>{
   }catch(err){ $('#pfImgNote').textContent='Couldn\'t read that image.'; }
 });
 function pfTotal(){
-  const rows=$$('#pfRows [data-row]').map(readRow).filter(r=>r._raw.net!=='');
+  const rows=$$('#pfRows [data-row]').map(readRow).filter(r=>r._raw.complete);
   const v=rows.reduce((s,r)=>s+toTHB(r.net+r.profit,r.currency),0), n=rows.reduce((s,r)=>s+(r.currency==='USD'?(r.netTHB||r.net*fx()):r.net),0);
   $('#pfTotal').innerHTML = rows.length? `Total <b>${fTHB(v)}</b> <span class="${tone(v-n)}">${arrow(v-n)} ${n?fPct((v-n)/n):''}</span>` : '';
 }
@@ -1104,7 +1132,7 @@ $('#pfForm').addEventListener('submit', async e=>{
   const name=$('#pfNameIn').value.trim();
   if(!name){ $('#pfNameIn').reportValidity(); return; }
   if(!$('#pfGoalIn').checkValidity()){ $('#pfGoalIn').reportValidity(); return; }
-  if(!pfEditing && !validRows($('#pfRows'))){ toast('Each asset needs a name and the money invested. Remove rows you don\'t need.'); return; }
+  if(!pfEditing && !validRows($('#pfRows'))){ toast('Each asset needs a name, the shares and the cost per share. Remove rows you don\'t need.'); return; }
   if(!guard()) return;
   const color=Number(document.querySelector('input[name=pfColor]:checked')?.value||0);
   const base={name, color, icon:iconFromForm(), goal:num($('#pfGoalIn').value)||null, note:$('#pfNoteIn').value.trim()};
@@ -1113,7 +1141,7 @@ $('#pfForm').addEventListener('submit', async e=>{
     await commit(()=>db.doc('portfolios/'+doc.id).set(strip(doc))); return;
   }
   const pid=uid('p'); const pdoc={id:pid, ...base, order:S.portfolios.length, createdAt:new Date().toISOString()};
-  const rows=$$('#pfRows [data-row]').map(readRow).filter(r=>r._raw.sym||r._raw.net!=='');
+  const rows=$$('#pfRows [data-row]').map(readRow).filter(r=>r._raw.sym||r._raw.filled);
   const hdocs=rows.map(r=>holdingDoc(r,{id:uid('h'), portfolioId:pid, createdAt:new Date().toISOString()}));
   upsertLocal('portfolios',pdoc); hdocs.forEach(h=>upsertLocal('holdings',h));
   $('#dlgPf').close();
@@ -1143,18 +1171,18 @@ function openHolding(pid, hid){
   const p=D.portfolios.find(x=>x.id===pid);
   $('#dlgHTitle').textContent = h? `Edit ${h.symbol||h.name}` : 'Add an asset'; $('#dlgHPf').textContent=p?.name||'';
   const l=h? liveFor(h):null;
-  $('#hBody').innerHTML = holdingFields('h', h||{}) + (l?`<div class="compare"><span class="live"><span class="livedot"></span>Market ${fCur(l.price,h.currency,2)}${l.estimate?' (estimate)':''}</span><span>Your saved average ${fCur(l.implied,h.currency,2)}. At the market price your profit would be <b class="num ${tone(l.liveProfit)}">${fSign(l.liveProfit,x=>fCur(x,h.currency))}</b>.</span><button class="btn sm" type="button" id="hUseLive">Use this price</button></div>`:'')
+  $('#hBody').innerHTML = holdingFields('h', h||{}) + (l?`<div class="compare"><span class="live"><span class="livedot"></span>Market ${fCur(l.price,h.currency,2)}${l.estimate?' (estimate)':''}</span><span>Your cost ${fCur(num(h.net)/num(h.qty),h.currency,2)} per unit. At the market price your profit would be <b class="num ${tone(l.liveProfit)}">${fSign(l.liveProfit,x=>fCur(x,h.currency))}</b>.</span><button class="btn sm" type="button" id="hUseLive">Use as price now</button></div>`:'')
     + (h? `<div class="small muted row">Value last saved ${esc(fDate(h.valuedAt||''))} ${linksHTML(h)}</div>`:'');
   updatePreview($('#hBody [data-row]'));
   $('#hDelete').hidden=!h;
-  $('#hUseLive')?.addEventListener('click', ()=>{ const row=$('#hBody [data-row]'); const pr=l.liveProfit; row.querySelector('[data-f="profit"]').value=Math.abs(pr).toFixed(2); row.querySelector(`input[type=radio][value="${pr<0?-1:1}"]`).checked=true; updatePreview(row); });
+  $('#hUseLive')?.addEventListener('click', ()=>{ const row=$('#hBody [data-row]'); row.querySelector('[data-f="price"]').value=nIn(l.price); updatePreview(row); });
   $('#dlgH').returnValue=''; $('#dlgH').showModal(); $('#hBody [data-f="symbol"]').focus();
 }
 wireRows($('#hBody'));
 $('#hForm').addEventListener('submit', async e=>{
   if(e.submitter?.value!=='save') return; e.preventDefault();
   const row=$('#hBody [data-row]'); const r=readRow(row);
-  if(!r._raw.sym || r._raw.net==='' || !validRows($('#hBody'))){ row.querySelector(!r._raw.sym?'[data-f="symbol"]':'[data-f="net"]').reportValidity(); toast('An asset needs a name and the money invested.'); return; }
+  if(!r._raw.sym || !r._raw.complete || !validRows($('#hBody'))){ firstInvalid(row).reportValidity(); toast('An asset needs a name, the shares and the cost per share.'); return; }
   if(!guard()) return;
   const prev=hEditing;
   const doc=holdingDoc(r, prev||{id:uid('h'), portfolioId:hPid, createdAt:new Date().toISOString()});
